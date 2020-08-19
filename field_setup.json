@@ -1,0 +1,125 @@
+{
+	"Padding": {
+		"x0": 30,
+		"y0": 30,
+		"x1": 30,
+		"y1": 30
+	},
+	"Activities": [
+		{
+			"id": "C33C99B7-024F-455C-959C-87259101B84D",
+			"name": "40 Yard Dash",
+			"color": "#00FF00",
+			"type": "Dash",
+			"bounds": {
+				"x0": 60,
+				"y0": 10,
+				"x1": 180,
+				"y1": 20
+			},
+			"Direction": 1,
+			"QueuePoint": {
+				"x0": 55,
+				"y0": 15
+			},
+			"CollectionPoint": {
+				"x0": 185,
+				"y0": 15
+			},
+			"TagCount": 5,
+			"UseBalls": false
+		},
+		{
+			"id": "79D255FE-CB3C-4B5E-A75D-234DCE2CA760",
+			"name": "Shuttle Run",
+			"color": "#FF0000",
+			"type": "Shuttle",
+			"bounds": {
+				"x0": 200,
+				"y0": 110,
+				"x1": 230,
+				"y1": 140
+			},
+			"Direction": 1,
+			"QueuePoint": {
+				"x0": 215,
+				"y0": 105
+			},
+			"CollectionPoint": {
+				"x0": 240,
+				"y0": 105
+			},
+			"TagCount": 5,
+			"UseBalls": false
+		},
+		{
+			"id": "2773D8FF-B08C-41F0-A80D-600AAA2114E4",
+			"name": "Field Goal Challenge",
+			"color": "#0000FF",
+			"type": "Goal",
+			"bounds": {
+				"x0": 279,
+				"y0": 40,
+				"x1": 360,
+				"y1": 120
+			},
+			"Direction": 1,
+			"QueuePoint": {
+				"x0": 275,
+				"y0": 80
+			},
+			"CollectionPoint": {
+				"x0": 365,
+				"y0": 80
+			},
+			"TagCount": 5,
+			"UseBalls": true
+		},
+		{
+			"id": "4208B317-CB16-4372-A4BB-61B839DA1796",
+			"name": "Passing Challenge",
+			"color": "#000000",
+			"type": "Pass",
+			"bounds": {
+				"x0": 80,
+				"y0": 80,
+				"x1": 140,
+				"y1": 120
+			},
+			"Direction": 1,
+			"QueuePoint": {
+				"x0": 75,
+				"y0": 100
+			},
+			"CollectionPoint": {
+				"x0": 145,
+				"y0": 100
+			},
+			"TagCount": 5,
+			"UseBalls": true,
+			"targets": [
+				{
+					"name": "Target 1",
+					"bounds": {
+						"x0": 95,
+						"y0": 90
+					}
+				},
+				{
+					"name": "Target 2",
+					"bounds": {
+						"x0": 105,
+						"y0": 110
+					}
+				},
+				{
+					"name": "Target 3",
+					"bounds": {
+						"x0": 115,
+						"y0": 100
+					}
+				}
+			]
+		}
+	]
+}

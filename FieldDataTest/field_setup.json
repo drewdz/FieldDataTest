@@ -1,0 +1,48 @@
+{
+	"activities": [
+		{
+			"id": "C33C99B7-024F-455C-959C-87259101B84D",
+			"name": "40 Yard Dash",
+			"type": "dash",
+			"bounds": {
+				"x0": 60,
+				"y0": 10,
+				"x1": 180,
+				"y1": 20
+			}
+		},
+		{
+			"id": "79D255FE-CB3C-4B5E-A75D-234DCE2CA760",
+			"name": "Shuttle Run",
+			"type": "shuttle",
+			"bounds": {
+				"x0": 90,
+				"y0": 140,
+				"x1": 110,
+				"y1": 120
+			}
+		},
+		{
+			"id": "2773D8FF-B08C-41F0-A80D-600AAA2114E4",
+			"name": "Field Goal Challenge",
+			"type": "goal",
+			"bounds": {
+				"x0": 0,
+				"y0": 40,
+				"x1": 90,
+				"y1": 120
+			}
+		},
+		{
+			"id": "4208B317-CB16-4372-A4BB-61B839DA1796",
+			"name": "Passing Challenge",
+			"type": "passing",
+			"bounds": {
+				"x0": 180,
+				"y0": 80,
+				"x1": 330,
+				"y1": 160
+			}
+		}
+	]
+}
