@@ -14,7 +14,7 @@ namespace DataFactory
 
         public const float EPSILON = 0.002f;
         public const float FEET_TO_METERS = 0.3048f;
-        public const float G = 9.81f;
+        public const float G = 32.17405f;
 
         #endregion Constants
     }

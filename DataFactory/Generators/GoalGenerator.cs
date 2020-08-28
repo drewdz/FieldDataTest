@@ -23,8 +23,8 @@ namespace DataFactory.Generators
     {
         #region Constants
 
-        private const float VMIN = 10.3632f;
-        private const float VRANGE = 14.23416f;
+        private const float VMIN = 34f;
+        private const float VRANGE = 46.7f;
         private const float AMIN = 0.471239f;
         private const float ARANGE = 0.261799f;
         private const float RMAX = 1400;
@@ -152,8 +152,7 @@ namespace DataFactory.Generators
             //  get the angle to the centre of the uprights
             var m = bounds.Y0 + ((bounds.Y1 - bounds.Y0) / 2);
             var aZ = (float)Math.Atan2(m - y0, bounds.X1 - bounds.X0);
-            const float aa = 0.261799f;
-            aZ += ((float)_Random.NextDouble() * aa) - (aa / 2);
+            aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
             //  rotate the kick into the direction of the kick / kick space
             foreach (var p in data)
             {

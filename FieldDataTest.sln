@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataFactory", "DataFactory\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataMonitor", "DataMonitor\DataMonitor.csproj", "{BF2EA74C-D8E5-41F8-A058-93B7D61B908E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldData.Core", "FieldData.Core\FieldData.Core.csproj", "{CED6A089-0B46-4DD9-9FF3-F87B9E9CC2B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FieldData.Core", "FieldData.Core\FieldData.Core.csproj", "{CED6A089-0B46-4DD9-9FF3-F87B9E9CC2B8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldData.Uwp", "FieldData.Uwp\FieldData.Uwp.csproj", "{0CEC5B9B-ADAF-416E-9E29-78B1F92B6E50}"
 EndProject

@@ -43,7 +43,7 @@ namespace DataFactory.Model
 
         public override string ToString()
         {
-            return $"{Timestamp},{TagId},{(int)((X / Constants.FEET_TO_METERS) * 10)},{(int)((Y / Constants.FEET_TO_METERS) * 10)},{(int)((V / Constants.FEET_TO_METERS) * 10)},{(int)R}";
+            return $"{Timestamp},{TagId},{(int)(X * 10)},{(int)(Y * 10)},{(int)(V * 10)},{(int)R}";
         }
 
         public EventData Copy()
@@ -56,6 +56,20 @@ namespace DataFactory.Model
                 Y = Y,
                 Z = Z,
                 V = V,
+                R = R
+            };
+        }
+
+        public EventData CopyToFeet()
+        {
+            return new EventData
+            {
+                Timestamp = Timestamp,
+                TagId = TagId,
+                X = X / Constants.FEET_TO_METERS,
+                Y = Y / Constants.FEET_TO_METERS,
+                Z = Z / Constants.FEET_TO_METERS,
+                V = V / Constants.FEET_TO_METERS,
                 R = R
             };
         }

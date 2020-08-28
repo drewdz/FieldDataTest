@@ -28,7 +28,7 @@ namespace DataFactory.Model
         #region Fields
 
         private List<TrackingTag> _Tags;
-        protected PointF _Entrance = new PointF(30, 0);
+        protected PointF _Entrance = new PointF(-30, -30);
         private List<EventData> _ActivityData;
         private TrackingTag _SelectedTag;
         private long _MaxMillis = 0;
@@ -73,6 +73,10 @@ namespace DataFactory.Model
         public IGenerator Generator { get; private set; }
 
         public ActivityState State { get; set; } = ActivityState.Waiting;
+
+        public PlayerActivity CurrentPlayer { get; set; }
+
+        public Action<PlayerActivity> OnDoneAction { get; set; }
 
         #endregion Properties
 
@@ -180,6 +184,7 @@ namespace DataFactory.Model
             }
             else
             {
+                if (CurrentPlayer != null) OnDoneAction?.Invoke(CurrentPlayer);
                 State = ActivityState.Waiting;
             }
         }

@@ -2,14 +2,24 @@
 using DataFactory.Model;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Xsl;
 
 namespace FieldDataTest
 {
@@ -19,6 +29,7 @@ namespace FieldDataTest
 
         private const float FIELD_WIDTH = 360f;
         private const float FIELD_HEIGHT = 160f;
+        private const string CONTENT_TYPE = "application/json";
 
         #endregion Constants
 
@@ -36,6 +47,8 @@ namespace FieldDataTest
         private Bitmap _Background;
         private System.Windows.Forms.Timer _RenderTimer;
         private bool _RunLogger = false;
+        //private string _BaseUrl = "https://{0}-service-dot-hwp-legends-dev.nw.r.appspot.com/";
+        private string _BaseUrl = "https://{0}-service-dot-hwp-legends.wl.r.appspot.com/";
 
         #endregion Fields
 
@@ -114,23 +127,8 @@ namespace FieldDataTest
                 //  convert to meters
                 foreach (var activity in _Field.Activities)
                 {
+                    activity.OnDoneAction = async (p) => await DoneAction(p);
                     activity.Init(0);
-                    activity.Bounds.X0 *= DataFactory.Constants.FEET_TO_METERS;
-                    activity.Bounds.Y0 *= DataFactory.Constants.FEET_TO_METERS;
-                    activity.Bounds.X1 *= DataFactory.Constants.FEET_TO_METERS;
-                    activity.Bounds.Y1 *= DataFactory.Constants.FEET_TO_METERS;
-                    if (activity.Targets != null)
-                    {
-                        foreach (var target in activity.Targets)
-                        {
-                            target.Bounds.X0 *= DataFactory.Constants.FEET_TO_METERS;
-                            target.Bounds.Y0 *= DataFactory.Constants.FEET_TO_METERS;
-                        }
-                    }
-                    activity.QueuePoint.X0 *= DataFactory.Constants.FEET_TO_METERS;
-                    activity.QueuePoint.Y0 *= DataFactory.Constants.FEET_TO_METERS;
-                    activity.CollectionPoint.X0 *= DataFactory.Constants.FEET_TO_METERS;
-                    activity.CollectionPoint.Y0 *= DataFactory.Constants.FEET_TO_METERS;
                 }
                 Init();
             }
@@ -156,15 +154,13 @@ namespace FieldDataTest
             Stats();
         }
 
-        private void LoadMenu_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void MainForm_Load(object sender, System.EventArgs e)
         {
             _Background = new Bitmap(GetType(), "field.png");
             //_Background = new Bitmap(GetType(), "pitch.png");
+            _Width = (float)MainImage.ClientRectangle.Width;
+            _Height = (float)MainImage.ClientRectangle.Height;
+
             Stats();
             _RenderTimer = new System.Windows.Forms.Timer();
             _RenderTimer.Tick += RenderLoop;
@@ -209,6 +205,7 @@ namespace FieldDataTest
 
         private void StartMenu_Click(object sender, EventArgs e)
         {
+            BaseAddressMenu.Enabled = false;
             new Thread(LoggerLoop).Start();
         }
 
@@ -219,27 +216,51 @@ namespace FieldDataTest
 
         private void MainImage_MouseUp(object sender, MouseEventArgs e)
         {
-            Debug.WriteLine($"Mouse click: {e.X}, {e.Y}");
             if (_Field == null) return;
             //  debounce the click
             if (DateTime.Now.Subtract(_LastClick).TotalMilliseconds < 700) return;
             _LastClick = DateTime.Now;
 
+            if ((_Field == null) || (_Field.Activities == null)) return;
+            float x = e.X / _ScaleX, y = (_Height - e.Y) / _ScaleY;
+            x -= _Field.Padding.X0; y -= _Field.Padding.Y0;
+            Debug.WriteLine($"Mouse click: {e.X} ({x}), {e.Y} ({y})");
+
             foreach (var activity in _Field.Activities)
             {
-                float x0 = activity.Bounds.X0 * _ScaleX, y0 = activity.Bounds.Y0 * _ScaleY;
-                float x1 = activity.Bounds.X1 * _ScaleX, y1 = activity.Bounds.Y1 * _ScaleY;
-                float w = x1 - x0, h = y1 - y0;
-                x0 += 5;
-                y0 += 5;
-                var rect = new Rectangle((int)x0, (int)(_Height - y0 - h), (int)w, (int)h);
-                if (rect.IntersectsWith(new Rectangle(e.X, e.Y, 1, 1)))
+                var h = activity.Bounds.Y1 - activity.Bounds.Y0;
+                var w = activity.Bounds.X1 - activity.Bounds.X0;
+                Debug.WriteLine($"Checking activity: {activity.Name} - {activity.Bounds.X0}, {activity.Bounds.Y0}, {w}, {h}");
+                var rect = new Rectangle((int)activity.Bounds.X0, (int)activity.Bounds.Y0, (int)w, (int)h);
+                if (rect.IntersectsWith(new Rectangle((int)x, (int)y, 1, 1)))
                 {
                     Debug.WriteLine($"You have clicked {activity.Name}");
-                    activity.ReadyUp(_Millis);
+                    SendScan(activity);
                     break;
                 }
             }
+        }
+
+        private void MainImage_Resize(object sender, EventArgs e)
+        {
+            //  get graphics context
+            _Width = (float)MainImage.ClientRectangle.Width;
+            _Height = (float)MainImage.ClientRectangle.Height;
+        }
+
+        private void GetPlayerMenu_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void GetPlayerActivityMenu_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ViewActivitiesMenu_Click(object sender, EventArgs e)
+        {
+
         }
 
         #endregion Event Handlers
@@ -259,7 +280,9 @@ namespace FieldDataTest
                 var data = activity.CreateSamples(_Millis, waitScan);
                 //  stream data
                 if ((data == null) || (data.Count() == 0)) continue;
-                Task.Run(() => _LogData.AddRange(data.Select(d => d.Copy()).ToList()));
+                //  add data to the log list
+                _LogData.AddRange(data.Select(d => d.Copy()).ToList());
+                //  add data to plot list
                 _Data.AddRange(data.Select(d => d.Copy()).ToList());
             }
             _Millis += 100;
@@ -269,47 +292,32 @@ namespace FieldDataTest
         {
             try
             {
+                if ((_Field == null) || (_Field.Activities == null) || (_Field.Activities.Count == 0)) return;
+
                 var data = _Data.ToList();
-                //  get graphics context
-                _Width = (float)MainImage.ClientRectangle.Width;
-                _Height = (float)MainImage.ClientRectangle.Height;
 
-                var margin = 5;
-
-                _ScaleX = (_Width - (2 * margin)) / (FIELD_WIDTH + _Field.Padding.X0 + _Field.Padding.X1);
-                _ScaleY = (_Height - (2 * margin)) / (FIELD_HEIGHT + _Field.Padding.Y0 + _Field.Padding.Y1);
-
-                Bitmap bmp = new Bitmap((int)_Width, (int)_Height);
-                using (var gc = Graphics.FromImage(bmp))
+                float width = FIELD_WIDTH + _Field.Padding.X0 + _Field.Padding.X1, height = FIELD_HEIGHT + _Field.Padding.Y0 + _Field.Padding.Y1;
+                _ScaleX = _Width / width; _ScaleY = _Height / height;
+                Bitmap back = new Bitmap((int)_Width, (int)_Height);
+                using (var gc = Graphics.FromImage(back))
                 {
-
-                    gc.Clear(Color.DarkGray);
-
-                    gc.DrawImage(_Background, margin + (_Field.Padding.X0 * _ScaleX), margin + (_Field.Padding.Y0 * _ScaleY), _Width - (2 * margin), _Height - (2 * margin));
+                    //  draw field
+                    gc.DrawImage(_Background, new Rectangle((int)(_Field.Padding.X0 * _ScaleX), (int)(_Field.Padding.Y0 * _ScaleY), (int)(FIELD_WIDTH * _ScaleX), (int)(FIELD_HEIGHT * _ScaleY)));
+                    gc.DrawRectangle(Pens.Red, (int)(_Field.Padding.X0 * _ScaleX), (int)(_Field.Padding.Y0 * _ScaleY), (int)(FIELD_WIDTH * _ScaleX), (int)(FIELD_HEIGHT * _ScaleY));
 
                     //  draw activities
-                    if ((_Field != null) && (_Field.Activities != null) && (_Field.Activities.Count > 0))
+                    foreach (var activity in _Field.Activities)
                     {
-                        foreach (var activity in _Field.Activities)
-                        {
-                            float x0 = (activity.Bounds.X0 + _Field.Padding.X0) * _ScaleX, y0 = (activity.Bounds.Y0 + _Field.Padding.Y0) * _ScaleY;
-                            float x1 = (activity.Bounds.X1 + _Field.Padding.X0) * _ScaleX, y1 = (activity.Bounds.Y1 + _Field.Padding.Y0) * _ScaleY;
-                            float w = x1 - x0, h = y1 - y0;
-                            x0 += margin;
-                            y0 += margin;
-                            var p = (activity.State == ActivityState.Ready) ? Pens.Orange : (activity.State == ActivityState.Waiting) ? Pens.LightGreen : Pens.Red;
-                            gc.DrawRectangle(p, x0, _Height - y0 - h, w, h);
-                            //  queue point
-                            x0 = activity.QueuePoint.X0 * _ScaleX; y0 = activity.QueuePoint.Y0 * _ScaleY;
-                            x0 += margin;
-                            y0 += margin;
-                            gc.FillEllipse(Brushes.Black, x0, _Height - y0 - 5, 5, 5);
-                            //  collect point
-                            x0 = activity.CollectionPoint.X0 * _ScaleX; y0 = activity.CollectionPoint.Y0 * _ScaleY;
-                            x0 += margin;
-                            y0 += margin;
-                            gc.FillEllipse(Brushes.Red, x0, _Height - y0 - 5, 5, 5);
-                        }
+                        var p = (activity.State == ActivityState.Ready) ? Pens.Orange : (activity.State == ActivityState.Waiting) ? Pens.LightGreen : Pens.Red;
+                        float x = (_Field.Padding.X0 + activity.Bounds.X0) * _ScaleX, y = (height - _Field.Padding.Y0 - activity.Bounds.Y0) * _ScaleY;
+                        float w = (activity.Bounds.X1 - activity.Bounds.X0) * _ScaleX, h = (activity.Bounds.Y1 - activity.Bounds.Y0) * _ScaleY;
+                        gc.DrawRectangle(p, x, y - h, w, h);
+                        //  queue point
+                        x = (_Field.Padding.X0 + activity.QueuePoint.X0) * _ScaleX; y = (height - _Field.Padding.Y0 - activity.QueuePoint.Y0) * _ScaleY;
+                        gc.FillEllipse(Brushes.Black, x, y - 5, 5, 5);
+                        //  collect point
+                        x = (_Field.Padding.X0 + activity.CollectionPoint.X0) * _ScaleX; y = (height - _Field.Padding.Y0 - activity.CollectionPoint.Y0) * _ScaleY;
+                        gc.FillEllipse(Brushes.Red, x, y - 5, 5, 5);
                     }
 
                     if ((data != null) && (data.Count() > 0))
@@ -317,13 +325,15 @@ namespace FieldDataTest
                         foreach (var d in data)
                         {
                             if (d == null) continue;
-                            gc.DrawRectangle(Pens.Black, ((d.X + _Field.Padding.X0) * _ScaleX) + margin, _Height - (((d.Y + _Field.Padding.Y0) * _ScaleY) + margin), 1, 1);
+                            //Debug.WriteLine(d);
+                            float x = (_Field.Padding.X0 + d.X) * _ScaleX, y = (height - _Field.Padding.Y0 - d.Y) * _ScaleY;
+                            gc.DrawRectangle(Pens.Black, x, y - 1, 1, 1);
                         }
                     }
                     data = null;
                     gc.Flush();
                 }
-                MainImage.Image = bmp;
+                MainImage.Image = back;
             }
             catch
             {
@@ -343,6 +353,7 @@ namespace FieldDataTest
 
             try
             {
+                Debug.WriteLine("Starting logging stream");
                 //  connect
                 var client = new TcpClient("34.94.247.16", 9000);
                 var stream = client.GetStream();
@@ -370,8 +381,13 @@ namespace FieldDataTest
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Exception: {ex}");
+                Debug.WriteLine($"Logging stream exception: {ex}");
             }
+            finally
+            {
+                BaseAddressMenu.Enabled = true;
+            }
+            Debug.WriteLine("Stop logging stream");
         }
 
         #endregion Logger
@@ -397,6 +413,69 @@ namespace FieldDataTest
             var rMin = _Data.Min(d => d.R);
             var rMax = _Data.Max(d => d.R);
             Status.Text = $"{_Data?.Count}; Bounds ({xMin}, {yMin}), ({xMax}, {yMax}); Velocity ({vMin}, {vMax}); RVelocity ({rMin}, {rMax})";
+        }
+
+        private async Task SendScan(FieldActivity activity)
+        {
+            if ((activity == null) || (activity.State != ActivityState.Waiting)) return;
+            try
+            {
+                var frm = new InputForm("Barcode", "Scan/Enter Barcode", string.Empty);
+                if (frm.ShowDialog(this) == DialogResult.Cancel) return;
+                //  create player activity object
+                var player = new PlayerActivity
+                {
+                    ActivityId = activity.Id,
+                    LanyardId = frm.Result,
+                    Scanned = DateTime.Now.ToUniversalTime(),
+                    StartTime = DateTime.Now.ToUniversalTime(),
+                    State = 1
+                };
+                var s = Serializer.Serialize(player);
+                //  create new player activity record
+                var result = await RestService.PostAsync<PlayerActivity, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
+                if (result.Status != ServiceResultStatus.Success)
+                {
+                    throw new Exception(result.Message);
+                }
+                activity.CurrentPlayer = result.Payload;
+                activity.ReadyUp(_Millis);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception: {ex}");
+            }
+        }
+
+        private async Task DoneAction(PlayerActivity player)
+        {
+            try
+            {
+                //  update the player
+                player.EndTime = DateTime.Now.ToUniversalTime();
+                player.State = 4;
+                //  update it
+                await RestService.PostAsync<PlayerActivity, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception: {ex}");
+            }
+        }
+
+        private void BaseAddressMenu_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var frm = new InputForm("Base Address", "Enter Base Address", _BaseUrl);
+                if (frm.ShowDialog(this) == DialogResult.Cancel) return;
+                if (_BaseUrl.Equals(frm.Result)) return;
+                _BaseUrl = frm.Result;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception: {ex}");
+            }
         }
 
         #endregion Helpers

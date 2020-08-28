@@ -157,7 +157,7 @@ namespace FieldData.Uwp.Views
                     foreach (var d in data)
                     {
                         if (d == null) continue;
-                        _Image.SetPixel((int)((d.X / Constants.FEET_TO_METERS)), (int)((d.Y / Constants.FEET_TO_METERS)), Colors.Black);
+                        _Image.SetPixel((int)d.X, (int)d.Y, Colors.Black);
                     }
                 }
                 data = null;

@@ -22,7 +22,7 @@ namespace DataFactory.Generators
         /// <summary>
         /// Velocity variance for humans - 13.5 - 9 = 4.5
         /// </summary>
-        private const float RANGE = 4.5f;
+        private const float RANGE = 14.76378f;
         /// <summary>
         /// Seconds to reach max velocity
         /// </summary>
@@ -72,7 +72,7 @@ namespace DataFactory.Generators
             //  walk to starting point
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y) });
             millis = data.Max(w => w.Timestamp) + 100;
-            data.AddRange(GenerateRun(millis, tag, x, y, v, 0.2f));
+            data.AddRange(GenerateRun(millis, tag, x, y, v, 0.656168f));
             //  walk to collection point
             var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
             millis = last.Timestamp + 100;

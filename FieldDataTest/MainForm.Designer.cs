@@ -35,7 +35,6 @@
             this.ActionMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.FieldMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.GenerateMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.LoadMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.SideViewMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -49,6 +48,13 @@
             this.StartWaitMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.OpenFile = new System.Windows.Forms.OpenFileDialog();
+            this.SettingsMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.BaseAddressMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.SimMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.GetPlayerMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.GetPlayerActivityMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
+            this.ViewActivitiesMenu = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.MainImage)).BeginInit();
             this.MainStatus.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -64,6 +70,7 @@
             this.MainImage.TabIndex = 0;
             this.MainImage.TabStop = false;
             this.MainImage.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MainImage_MouseUp);
+            this.MainImage.Resize += new System.EventHandler(this.MainImage_Resize);
             // 
             // MainStatus
             // 
@@ -87,7 +94,9 @@
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ActionMenu,
             this.streamToolStripMenuItem,
-            this.ExecuteMenu});
+            this.ExecuteMenu,
+            this.SimMenu,
+            this.SettingsMenu});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(784, 24);
@@ -99,7 +108,6 @@
             this.ActionMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.FieldMenu,
             this.GenerateMenu,
-            this.LoadMenu,
             this.toolStripMenuItem1,
             this.SideViewMenu,
             this.toolStripSeparator1,
@@ -112,52 +120,45 @@
             // FieldMenu
             // 
             this.FieldMenu.Name = "FieldMenu";
-            this.FieldMenu.Size = new System.Drawing.Size(148, 22);
+            this.FieldMenu.Size = new System.Drawing.Size(180, 22);
             this.FieldMenu.Text = "Load Field";
             this.FieldMenu.Click += new System.EventHandler(this.FieldMenu_Click);
             // 
             // GenerateMenu
             // 
             this.GenerateMenu.Name = "GenerateMenu";
-            this.GenerateMenu.Size = new System.Drawing.Size(148, 22);
+            this.GenerateMenu.Size = new System.Drawing.Size(180, 22);
             this.GenerateMenu.Text = "Generate Data";
             this.GenerateMenu.Click += new System.EventHandler(this.GenerateMenu_Click);
-            // 
-            // LoadMenu
-            // 
-            this.LoadMenu.Name = "LoadMenu";
-            this.LoadMenu.Size = new System.Drawing.Size(148, 22);
-            this.LoadMenu.Text = "Load Data";
-            this.LoadMenu.Click += new System.EventHandler(this.LoadMenu_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(145, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
             // 
             // SideViewMenu
             // 
             this.SideViewMenu.Name = "SideViewMenu";
-            this.SideViewMenu.Size = new System.Drawing.Size(148, 22);
+            this.SideViewMenu.Size = new System.Drawing.Size(180, 22);
             this.SideViewMenu.Text = "Side View";
             this.SideViewMenu.Click += new System.EventHandler(this.SideViewMenu_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(145, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
             // 
             // ResetMenu
             // 
             this.ResetMenu.Name = "ResetMenu";
-            this.ResetMenu.Size = new System.Drawing.Size(148, 22);
+            this.ResetMenu.Size = new System.Drawing.Size(180, 22);
             this.ResetMenu.Text = "Reset";
             this.ResetMenu.Click += new System.EventHandler(this.ResetMenu_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(145, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(177, 6);
             // 
             // streamToolStripMenuItem
             // 
@@ -171,14 +172,14 @@
             // StartMenu
             // 
             this.StartMenu.Name = "StartMenu";
-            this.StartMenu.Size = new System.Drawing.Size(138, 22);
+            this.StartMenu.Size = new System.Drawing.Size(180, 22);
             this.StartMenu.Text = "Start Stream";
             this.StartMenu.Click += new System.EventHandler(this.StartMenu_Click);
             // 
             // StopMenu
             // 
             this.StopMenu.Name = "StopMenu";
-            this.StopMenu.Size = new System.Drawing.Size(138, 22);
+            this.StopMenu.Size = new System.Drawing.Size(180, 22);
             this.StopMenu.Text = "Stop Stream";
             this.StopMenu.Click += new System.EventHandler(this.StopMenu_Click);
             // 
@@ -210,6 +211,58 @@
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
             this.toolStripMenuItem3.Size = new System.Drawing.Size(177, 6);
+            // 
+            // SettingsMenu
+            // 
+            this.SettingsMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.BaseAddressMenu});
+            this.SettingsMenu.Name = "SettingsMenu";
+            this.SettingsMenu.Size = new System.Drawing.Size(61, 20);
+            this.SettingsMenu.Text = "Settings";
+            // 
+            // BaseAddressMenu
+            // 
+            this.BaseAddressMenu.Name = "BaseAddressMenu";
+            this.BaseAddressMenu.Size = new System.Drawing.Size(180, 22);
+            this.BaseAddressMenu.Text = "Base Address";
+            this.BaseAddressMenu.Click += new System.EventHandler(this.BaseAddressMenu_Click);
+            // 
+            // SimMenu
+            // 
+            this.SimMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.GetPlayerMenu,
+            this.GetPlayerActivityMenu,
+            this.toolStripMenuItem4,
+            this.ViewActivitiesMenu});
+            this.SimMenu.Name = "SimMenu";
+            this.SimMenu.Size = new System.Drawing.Size(39, 20);
+            this.SimMenu.Text = "Sim";
+            // 
+            // GetPlayerMenu
+            // 
+            this.GetPlayerMenu.Name = "GetPlayerMenu";
+            this.GetPlayerMenu.Size = new System.Drawing.Size(180, 22);
+            this.GetPlayerMenu.Text = "Get Player";
+            this.GetPlayerMenu.Click += new System.EventHandler(this.GetPlayerMenu_Click);
+            // 
+            // GetPlayerActivityMenu
+            // 
+            this.GetPlayerActivityMenu.Name = "GetPlayerActivityMenu";
+            this.GetPlayerActivityMenu.Size = new System.Drawing.Size(180, 22);
+            this.GetPlayerActivityMenu.Text = "Get Player Activity";
+            this.GetPlayerActivityMenu.Click += new System.EventHandler(this.GetPlayerActivityMenu_Click);
+            // 
+            // toolStripMenuItem4
+            // 
+            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
+            this.toolStripMenuItem4.Size = new System.Drawing.Size(177, 6);
+            // 
+            // ViewActivitiesMenu
+            // 
+            this.ViewActivitiesMenu.Name = "ViewActivitiesMenu";
+            this.ViewActivitiesMenu.Size = new System.Drawing.Size(180, 22);
+            this.ViewActivitiesMenu.Text = "View Activities";
+            this.ViewActivitiesMenu.Click += new System.EventHandler(this.ViewActivitiesMenu_Click);
             // 
             // MainForm
             // 
@@ -243,7 +296,6 @@
         private System.Windows.Forms.ToolStripMenuItem ActionMenu;
         private System.Windows.Forms.ToolStripMenuItem FieldMenu;
         private System.Windows.Forms.ToolStripMenuItem GenerateMenu;
-        private System.Windows.Forms.ToolStripMenuItem LoadMenu;
         private System.Windows.Forms.OpenFileDialog OpenFile;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem SideViewMenu;
@@ -257,5 +309,12 @@
         private System.Windows.Forms.ToolStripMenuItem RunMenu;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         private System.Windows.Forms.ToolStripMenuItem StartWaitMenu;
+        private System.Windows.Forms.ToolStripMenuItem SettingsMenu;
+        private System.Windows.Forms.ToolStripMenuItem BaseAddressMenu;
+        private System.Windows.Forms.ToolStripMenuItem SimMenu;
+        private System.Windows.Forms.ToolStripMenuItem GetPlayerMenu;
+        private System.Windows.Forms.ToolStripMenuItem GetPlayerActivityMenu;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
+        private System.Windows.Forms.ToolStripMenuItem ViewActivitiesMenu;
     }
 }

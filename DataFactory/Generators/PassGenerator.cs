@@ -6,7 +6,7 @@
  *      Target 2 - 20 feet,
  *      Target 3 - 30 feet
  *      
- *      Speed: 13.41-22.35 m/s (30-50 mph) = 8.94 variance
+ *      Speed: 13.41-22.35 m/s (30-50 mph) = 8.94 variance (43.99606-73.32677 = 29.33071 ft/s)
  *      Angle: 0-35 deg = 0-0.610865 rad 
  */
 
@@ -22,12 +22,11 @@ namespace DataFactory.Generators
     {
         #region Constants
 
-        private const float G = 9.8f;
-        private const float VMIN = 13.41f;
-        private const float VRANGE = 8.94f;
+        private const float VMIN = 43.99606f;
+        private const float VRANGE = 29.33071f;
         private const float ARANGE = 0.261799f;
         private const float RMAX = 750;
-        private const float TWO_FEET = 0.6096f;
+        private const float TWO_FEET = 2f;
 
         #endregion Constants
 
@@ -80,8 +79,7 @@ namespace DataFactory.Generators
                 millis = data.Max(w => w.Timestamp) + 1000;     //   1 second to aim
                 //  get the angle to the target
                 var aZ = (float)Math.Atan2(target.Bounds.Y0 - y0, target.Bounds.X0 - x0);
-                const float aa = 0.261799f;
-                aZ += ((float)_Random.NextDouble() * aa) - (aa / 2);
+                aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
                 //  generate initial velocity and throw
                 var v = VMIN + ((float)_Random.NextDouble() * VRANGE);
                 data.AddRange(GenerateThrow(millis, tag, x0, y0, v, aZ, _Activity.Bounds));
@@ -117,7 +115,7 @@ namespace DataFactory.Generators
                 x += v.X * 0.1f;
                 z += v.Y * 0.1f;
                 //  decellarate by gravity
-                var d = G * 0.1f;
+                var d = Constants.G * 0.1f;
                 v = new Vector { X = v.X, Y = v.Y - d };
                 data.Add(new EventData
                 {

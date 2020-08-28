@@ -7,10 +7,11 @@
 	},
 	"Activities": [
 		{
-			"id": "C33C99B7-024F-455C-959C-87259101B84D",
+			"id": "7478df19-d2f3-444e-832f-9f9ab787ff47",
 			"name": "40 Yard Dash",
 			"color": "#00FF00",
 			"type": "Dash",
+			"typeId": "9bd9eddc-c75f-11ea-a125-42010aa80030",
 			"bounds": {
 				"x0": 60,
 				"y0": 10,
@@ -30,10 +31,11 @@
 			"UseBalls": false
 		},
 		{
-			"id": "79D255FE-CB3C-4B5E-A75D-234DCE2CA760",
+			"id": "b27ce17b-b727-4c55-8f94-4970e551111f",
 			"name": "Shuttle Run",
 			"color": "#FF0000",
 			"type": "Shuttle",
+			"typeId": "9b9ed4d5-c75f-11ea-a125-42010aa80030",
 			"bounds": {
 				"x0": 200,
 				"y0": 110,
@@ -46,14 +48,14 @@
 				"y0": 105
 			},
 			"CollectionPoint": {
-				"x0": 240,
+				"x0": 225,
 				"y0": 105
 			},
 			"TagCount": 5,
 			"UseBalls": false
 		},
 		{
-			"id": "2773D8FF-B08C-41F0-A80D-600AAA2114E4",
+			"id": "c4bcfc42-f74c-4e18-a36c-6b5cee88765d",
 			"name": "Field Goal Challenge",
 			"color": "#0000FF",
 			"type": "Goal",
@@ -76,7 +78,7 @@
 			"UseBalls": true
 		},
 		{
-			"id": "4208B317-CB16-4372-A4BB-61B839DA1796",
+			"id": "ed6a0918-da25-41db-8509-942deaae4975",
 			"name": "Passing Challenge",
 			"color": "#000000",
 			"type": "Pass",

@@ -16,8 +16,8 @@ namespace DataFactory.Generators
     {
         #region Constants
 
-        protected const float WALK_MIN = 0.833333f;
-        protected const float WALK_RANGE = 0.277778f;
+        protected const float WALK_MIN = 2.734033f;
+        protected const float WALK_RANGE = 0.911345f;
 
         #endregion Constants
 
@@ -40,6 +40,7 @@ namespace DataFactory.Generators
         public virtual List<EventData> Walk(long millis, string tag, List<PointF> points)
         {
             if ((points == null) || (points.Count < 2)) throw new Exception("Need at least 2 points to generate a walk");
+            if (_Activity.Type.Equals("Dash")) Debug.WriteLine($"Generating walk: {points[0]}, {points[1]}");
             //  determine a speed for this walker
             var data = new List<EventData>();
             for (int i = 1; i < points.Count; i++)
@@ -55,11 +56,15 @@ namespace DataFactory.Generators
         {
             //  get initial velocity
             var s = (float)(WALK_MIN + (_Random.NextDouble() * WALK_RANGE));
-            var variance = 0.0555556f;
+            var variance = 0.182269f; //    +-10%
             var direction = new Vector { X = to.X - from.X, Y = to.Y - from.Y };
             direction.Normalize();
             var dirX = (to.X >= from.X) ? 1 : -1;
             var dirY = (to.Y >= from.Y) ? 1 : -1;
+            //  translate to from space (from at the origin)
+            to.X -= from.X; to.Y -= from.Y;
+            to.X *= dirX; to.Y *= dirY;
+            direction.X *= dirX; direction.Y *= dirY;
             //  walk
             float x = 0, y = 0, t = 0;
             float x1 = to.X - from.X, y1 = to.Y - from.Y;
@@ -67,7 +72,7 @@ namespace DataFactory.Generators
             while (true)
             {
                 //  check if we're there yet
-                if ((((x1 - x) * dirX) < Constants.EPSILON) && (((y1 - y) * dirY) < Constants.EPSILON)) break;
+                if (((to.X - x) < Constants.EPSILON) && ((to.Y - y) < Constants.EPSILON)) break;
                 //  get location
                 var v = s + ((float)_Random.NextDouble() * variance) - (variance / 2);
                 x += direction.X * v * 0.1f;
@@ -77,8 +82,8 @@ namespace DataFactory.Generators
                     TagId = tag,
                     Timestamp = millis,
                     V = s,
-                    X = x + from.X,
-                    Y = y + from.Y
+                    X = from.X + (x * dirX),
+                    Y = from.Y + (y * dirY)
                 });
                 t += 0.1f;
                 millis += 100;
