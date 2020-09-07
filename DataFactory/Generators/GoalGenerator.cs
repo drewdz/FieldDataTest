@@ -106,7 +106,7 @@ namespace DataFactory.Generators
         private List<EventData> Generate(long millis, string tag)
         {
             //  generate a starting point
-            var x = (_Activity.Direction >= 0)? _Activity.Bounds.X0 : _Activity.Bounds.X1;
+            var x = (_Activity.Direction >= 0) ? _Activity.Bounds.X0 : _Activity.Bounds.X1;
             var y = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) * (float)_Random.NextDouble());
             //  walk to starting point
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y) });
@@ -161,20 +161,13 @@ namespace DataFactory.Generators
             var m = bounds.Y0 + ((bounds.Y1 - bounds.Y0) / 2);
             var aZ = (float)Math.Atan2(m - y0, bounds.X1 - bounds.X0);
             aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
-            if (_Activity.Direction < 0)
-            {
-                aZ = (float)Math.PI - aZ;
-            }
             //  rotate the kick into the direction of the kick / kick space
             Debug.WriteLine($"Rotate to kick space: {aZ}");
             foreach (var p in data)
             {
-                if (p.X > 0)
-                {
-                    var n = new Vector(p.X, aZ);
-                    p.X = n.X;
-                    p.Y = n.Y;
-                }
+                var n = new Vector(p.X, -aZ);
+                p.X = n.X;
+                p.Y = n.Y;
                 p.X += x0;
                 p.Y += y0;
                 Debug.WriteLine($"Rotating point: {p}");

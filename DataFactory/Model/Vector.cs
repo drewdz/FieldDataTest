@@ -12,10 +12,10 @@ namespace DataFactory.Model
 
         public Vector(float length, float angle)
         {
-            _Length = length;
-            X = length * (float)Math.Cos(Math.Abs(angle));
+            X = length * (float)Math.Cos(angle);
             Y = length * (float)Math.Sin(angle);
             Angle = angle;
+            _Length = length;
         }
 
         #endregion Constructors

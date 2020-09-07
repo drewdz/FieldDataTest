@@ -93,15 +93,18 @@ namespace DataFactory.Model
                 var tag = new TrackingTag
                 {
                     IsBall = UseBalls,
-                    Timestamp = 0,
-                    Used = true,
-                    InUse = false
+                    Timestamp = millis,
+                    Used = false,
+                    InUse = false,
+                    X = QueuePoint.X0,
+                    Y = QueuePoint.Y0
                 };
                 _Tags.Add(tag);
             }
             //  get to the queue point
-            _MaxMillis = 0;
-            GeneratePath(millis, false);
+            _MaxMillis = millis - 100;
+            State = ActivityState.Waiting;
+            //GeneratePath(millis, false);
         }
 
         #endregion Init

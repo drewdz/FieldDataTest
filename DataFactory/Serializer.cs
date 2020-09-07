@@ -61,6 +61,26 @@ namespace DataFactory
             }
         }
 
+        public static TEntity Deserialize<TEntity>(Stream stream)
+        {
+            var serializer = new JsonSerializer();
+            try
+            {
+                using (var sr = new StreamReader(stream))
+                {
+                    using (var reader = new JsonTextReader(sr))
+                    {
+                        return serializer.Deserialize<TEntity>(reader);
+                    }
+                }
+            }
+            catch (JsonSerializationException jsx)
+            {
+                System.Diagnostics.Debug.WriteLine($"*** Serializer.Deserialize - Unable to deserialize json from stream");
+                throw jsx;
+            }
+        }
+
         public static object Deserialize(System.Type entityType, string json)
         {
             if (json.Contains("DOCTYPE html"))

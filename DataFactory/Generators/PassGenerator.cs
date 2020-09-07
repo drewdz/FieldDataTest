@@ -147,12 +147,9 @@ namespace DataFactory.Generators
             Debug.WriteLine("Rotating points...");
             foreach (var p in data)
             {
-                if (p.X > 0)
-                {
-                    var n = new Vector(p.X, aZ);
-                    p.X = n.X;
-                    p.Y = n.Y;
-                }
+                var n = new Vector(p.X, -aZ);
+                p.X = n.X;
+                p.Y = n.Y;
                 p.X += x0;
                 p.Y += y0;
                 Debug.WriteLine($"Point rotated now - {p}");

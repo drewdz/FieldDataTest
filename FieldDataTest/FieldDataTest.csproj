@@ -111,7 +111,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <EmbeddedResource Include="field.png" />
-    <Content Include="field_setup.json" />
+    <EmbeddedResource Include="field_setup.json" />
     <EmbeddedResource Include="SideView.resx">
       <DependentUpon>SideView.cs</DependentUpon>
     </EmbeddedResource>

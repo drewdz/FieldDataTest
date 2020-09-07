@@ -42,7 +42,6 @@ namespace FieldDataTest
         private bool _Running = false;
         private float _ScaleX, _ScaleY;
         private System.Threading.Timer _FieldTimer;
-        //private long _Millis = 0;
         private float _Width, _Height;
         private DateTime _LastClick;
         private Bitmap _Background;
@@ -72,28 +71,6 @@ namespace FieldDataTest
         }
 
         #endregion Constructors
-
-        #region Init
-
-        private void Init()
-        {
-            if ((_Field == null) || (_Field.Activities == null)) return;
-            foreach (var activity in _Field.Activities)
-            {
-                //  add action menu item
-                var menuItem = new ToolStripMenuItem(activity.Name);
-                menuItem.Click += OnActionItemClicked;
-                menuItem.Tag = activity.Type;
-                ActionMenu.DropDownItems.Add(menuItem);
-                //  add execute menu item
-                menuItem = new ToolStripMenuItem(activity.Name);
-                menuItem.Click += OnExecuteItemClicked;
-                menuItem.Tag = activity.Type;
-                ExecuteMenu.DropDownItems.Add(menuItem);
-            }
-        }
-
-        #endregion Init
 
         #region Event Handlers
 
@@ -136,7 +113,6 @@ namespace FieldDataTest
                     activity.OnDoneAction = async (p) => await DoneAction(p);
                     activity.Init(0);
                 }
-                Init();
             }
             catch (Exception ex)
             {
@@ -144,74 +120,64 @@ namespace FieldDataTest
             }
         }
 
-        private void GenerateMenu_Click(object sender, EventArgs e)
-        {
-            if ((_Field == null) || (_Field.Activities == null) || (_Field.Activities.Count == 0)) return;
-            _Data.Clear();
-
-            foreach (var activity in _Field.Activities)
-            {
-                for (int i = 0; i < 10; i++)
-                {
-                    //  get the appropriate data
-                    _Data.AddRange(activity.Generator.Generate(DateTime.Now, 10));
-                }
-            }
-            Stats();
-        }
-
         private void MainForm_Load(object sender, System.EventArgs e)
         {
             _Background = new Bitmap(GetType(), "field.png");
-            //_Background = new Bitmap(GetType(), "pitch.png");
             _Width = (float)MainImage.ClientRectangle.Width;
             _Height = (float)MainImage.ClientRectangle.Height;
 
-            Stats();
+            Status.Text = string.Empty;
+
+            //  find the field setup in resources
+            foreach (var name in GetType().Assembly.GetManifestResourceNames().Where(n => n.EndsWith("field_setup.json")))
+            {
+                using (var stream = GetType().Assembly.GetManifestResourceStream(name))
+                {
+                    _Field = Serializer.Deserialize<PlayingField>(stream);
+                    //  convert to meters
+                    foreach (var activity in _Field.Activities)
+                    {
+                        activity.OnDoneAction = async (p) => await DoneAction(p);
+                        activity.Init(0);
+                    }
+                }
+            }
+
             _RenderTimer = new System.Windows.Forms.Timer();
             _RenderTimer.Tick += RenderLoop;
             _RenderTimer.Interval = 20;
             _RenderTimer.Start();
-        }
 
-        private void SideViewMenu_Click(object sender, EventArgs e)
-        {
-            if ((_Data == null) || (_Data.Count == 0)) return;
-            var frm = new SideView(_Data);
-            frm.ShowDialog(this);
+            RunMenu_Click(this, e);
         }
 
         private void RunMenu_Click(object sender, EventArgs e)
         {
-            var menu = (ToolStripMenuItem)sender;
-            bool waitScan = (menu.Text.Equals("Start No Scanner")) ? false : true;
             _Running = !_Running;
             //  start running
             if (_Running)
             {
-                StartWaitMenu.Visible = false;
-                //_Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                //_Millis = DateTimeOffset.Now.Subtract(Constants.UnixEpoch).Milliseconds;
-                //Debug.WriteLine($"Start: {_Millis}");
+                RunMenu.Visible = false;
                 foreach (var activity in _Field.Activities) activity.Init(DateTimeOffset.Now.ToUnixTimeMilliseconds());
-                _FieldTimer = new System.Threading.Timer(Tick, waitScan, 0, 100);
+                _FieldTimer = new System.Threading.Timer(Tick, true, 0, 100);
             }
             else
             {
-                StartWaitMenu.Visible = true;
+                RunMenu.Visible = true;
                 _FieldTimer.Dispose();
                 _FieldTimer = null;
             }
             RunMenu.Text = (_Running) ? "Stop" : "Start No Scanner";
         }
 
-        private void ResetMenu_Click(object sender, EventArgs e)
-        {
-            if (_Data != null) _Data.Clear();
-        }
-
         private void StartMenu_Click(object sender, EventArgs e)
         {
+            if (StartMenu.Text.Equals("Stop Streaming"))
+            {
+                _RunLogger = false;
+                return;
+            }
+
             if (_ToFile)
             {
                 if (string.IsNullOrWhiteSpace(_StreamFile))
@@ -230,15 +196,9 @@ namespace FieldDataTest
                 }
             }
 
-            BaseAddressMenu.Enabled = false;
             _LastTick = DateTime.Now;
             new Thread(LoggerLoop).Start();
             new Thread(CheckLogger).Start();
-        }
-
-        private void StopMenu_Click(object sender, EventArgs e)
-        {
-            _RunLogger = false;
         }
 
         private void MainImage_MouseUp(object sender, MouseEventArgs e)
@@ -275,119 +235,12 @@ namespace FieldDataTest
             _Height = (float)MainImage.ClientRectangle.Height;
         }
 
-        private void GetPlayerMenu_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void GetPlayerActivityMenu_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void ViewActivitiesMenu_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void LoadDataMenu_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                OpenFile.Filter = "All JSON Files (*.json)|*.json";
-                if (OpenFile.ShowDialog(this) != DialogResult.OK) return;
-                using (var streamReader = new StreamReader(OpenFile.FileName))
-                {
-                    var data = Serializer.Deserialize<List<EventData>>(streamReader.ReadToEnd());
-                    data.ForEach(d =>
-                    {
-                        d.X /= 10;
-                        d.Y /= 10;
-                    });
-                    _Data = data;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Exception loading data: {ex}");
-            }
-        }
-
-        private void ClearTrackingMenu_Click(object sender, EventArgs e)
-        {
-            ClearTrackingMenu.Enabled = false;
-            Task.Run(async () =>
-            {
-                try
-                {
-                    //  get all tracking data
-                    SetStatus("Getting data to remove...");
-                    using (var restService = new RestService())
-                    {
-                        var result = await restService.GetAsync<List<EventData>>(string.Format($"{_BaseUrl}domain/trackingdata", "activity"));
-                        if ((result == null) || (result.Count == 0))
-                        {
-                            Debug.WriteLine("No data found to delete.");
-                            Status.Text = string.Empty;
-                            return;
-                        }
-                        //  remove from backend
-                        int count = 0, total = result.Count;
-                        SetStatus($"Clearing records - {count}/{total}");
-                        //result.AsParallel().ForAll(async d =>
-                        foreach (var d in result)
-                        {
-                            try
-                            {
-                                await restService.DeleteAsync(string.Format($"{_BaseUrl}domain/trackingdata/delete?tracking_data_id={d.Id}", "activity"));
-                                count++;
-                                if ((count % 100) == 0) SetStatus($"Clearing records - {count}/{total}");
-                            }
-                            catch (Exception ix)
-                            {
-                                Debug.WriteLine($"Exception in parallel process: {ix}");
-                            }
-                        };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Exception clearing data: {ex}");
-                }
-                finally
-                {
-                    Status.Text = string.Empty;
-                }
-                return;
-            });
-            ClearTrackingMenu.Enabled = true;
-        }
-
-        private void StreamFileMenu_Click(object sender, EventArgs e)
-        {
-            _ToFile = !_ToFile;
-            StreamFileMenu.Checked = _ToFile;
-        }
-
-        private void timeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //MessageBox.Show($"DateTime.Now: {DateTime.Now}\r\nDateTime.Now.-UTC: {DateTime.Now.ToUniversalTime()}\r\nDateTimeOffset.Now: {DateTimeOffset.Now}\r\nDateTimeOffset.Now.-UTC: {DateTimeOffset.Now.ToUniversalTime()}\r\nDateTimeOffset.UtcNow: {DateTimeOffset.UtcNow}");
-
-            //var now = DateTimeOffset.UtcNow;
-            //var nowMillis1 = now.ToUnixTimeMilliseconds();
-            //var nowMillis2 = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            //var n1 = DateTimeOffset.FromUnixTimeMilliseconds(nowMillis1);
-            //var n2 = DateTimeOffset.FromUnixTimeMilliseconds(nowMillis2);
-            //var n3 = DateTimeOffset.FromUnixTimeMilliseconds(1598968914449);
-            //MessageBox.Show($"Now: {now}\r\nMillis 1: {nowMillis1}\r\nMillis 2: {nowMillis2}\r\nN1: {n1}\r\nN2: {n2}\r\nN3: {n3}");
-
-            MessageBox.Show($"Now: {DateTimeOffset.Now:yyyy-MM-ddTHH:mm:ss.fffzz00}");
-        }
-
         private void PauseMenu_Click(object sender, EventArgs e)
         {
             _PauseOnly = !_PauseOnly;
             PauseMenu.Checked = _PauseOnly;
+            SimStatus.Text = (_PauseOnly) ? "Use Scanner App" : "Simulate Scanner";
+            SimStatus.BackColor = (_PauseOnly) ? Color.IndianRed : SystemColors.Control;
         }
 
         #endregion Event Handlers
@@ -496,7 +349,7 @@ namespace FieldDataTest
             if (_RunLogger) return;
             _RunLogger = true;
             _StreamText = string.Empty;
-
+            SetStreamStatus("Streaming");
 
             try
             {
@@ -556,9 +409,25 @@ namespace FieldDataTest
             }
             finally
             {
-                BaseAddressMenu.Enabled = true;
+                SetStreamStatus("Not Streaming");
             }
             Debug.WriteLine("Stop logging stream");
+        }
+
+        private void SetStreamStatus(string text)
+        {
+            if (MainStatus.InvokeRequired)
+            {
+                MainStatus.Invoke(new CrossDelegateMethod(SetStreamStatus), new object[] { text });
+            }
+            else
+            {
+                var streaming = text.Equals("Streaming");
+                var color = (streaming) ? Color.DarkSeaGreen : SystemColors.Control;
+                StartMenu.Text = (streaming) ? "Stop Streaming" : "Start Streaming";
+                StreamStatus.Text = text;
+                StreamStatus.BackColor = color;
+            }
         }
 
         #endregion Logger
@@ -639,6 +508,11 @@ namespace FieldDataTest
             {
                 Debug.WriteLine($"Exception: {ex}");
             }
+        }
+
+        private void ExitMenu_Click(object sender, EventArgs e)
+        {
+            Close();
         }
 
         private async Task DoneAction(PlayerActivity player)
