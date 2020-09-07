@@ -14,6 +14,7 @@
 using DataFactory.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 
@@ -72,17 +73,20 @@ namespace DataFactory.Generators
             //  kick 1
             var tag = Guid.NewGuid().ToString();
             var tags = new List<string> { tag };
+            Debug.WriteLine("Generating kick 1...");
             var data = Generate(millis, tag);
             //  3 second delay to next kick
             millis = data.Max(d => d.Timestamp) + 3000;
             //  kick 2
             tag = Guid.NewGuid().ToString();
             tags.Add(tag);
+            Debug.WriteLine("Generating kick 2...");
             data.AddRange(Generate(millis, tag));
             millis = data.Max(d => d.Timestamp) + 3000;
             //  kick 3
             tag = Guid.NewGuid().ToString();
             tags.Add(tag);
+            Debug.WriteLine("Generating kick 3...");
             data.AddRange(Generate(millis, tag));
             millis = data.Max(d => d.Timestamp) + 2000;
             //  collect balls and take to collection point - 1
@@ -102,12 +106,13 @@ namespace DataFactory.Generators
         private List<EventData> Generate(long millis, string tag)
         {
             //  generate a starting point
-            var x = _Activity.Bounds.X0;
+            var x = (_Activity.Direction >= 0)? _Activity.Bounds.X0 : _Activity.Bounds.X1;
             var y = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) * (float)_Random.NextDouble());
             //  walk to starting point
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y) });
             millis = data.Max(w => w.Timestamp) + 100;
             //  kick the ball
+            Debug.WriteLine($"Generating kick - from: ({x},{y})...");
             data.AddRange(GenerateFlight(millis, tag, x, y, _Activity.Bounds));
             //  collect the ball and carry it to collection
             var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
@@ -132,12 +137,12 @@ namespace DataFactory.Generators
                 //  check if we've hit the ground
                 if ((t > 0.1f) && ((z - Constants.EPSILON) <= 0)) break;
                 //  get location
-                x += v.X * 0.1f;
+                x += (v.X * 0.1f) * _Activity.Direction;
                 z += v.Y * 0.1f;
                 //  decelerate by gravity
                 var d = Constants.G * 0.1f;
                 v = new Vector { X = v.X, Y = v.Y - d };
-                data.Add(new EventData
+                var pt = new EventData
                 {
                     R = r,
                     TagId = tag,
@@ -146,7 +151,9 @@ namespace DataFactory.Generators
                     X = x,
                     Y = 0,
                     Z = z
-                });
+                };
+                Debug.WriteLine($"Adding point: {pt}");
+                data.Add(pt);
                 t += 0.1f;
                 millis += 100;
             }
@@ -154,7 +161,12 @@ namespace DataFactory.Generators
             var m = bounds.Y0 + ((bounds.Y1 - bounds.Y0) / 2);
             var aZ = (float)Math.Atan2(m - y0, bounds.X1 - bounds.X0);
             aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
+            if (_Activity.Direction < 0)
+            {
+                aZ = (float)Math.PI - aZ;
+            }
             //  rotate the kick into the direction of the kick / kick space
+            Debug.WriteLine($"Rotate to kick space: {aZ}");
             foreach (var p in data)
             {
                 if (p.X > 0)
@@ -165,6 +177,7 @@ namespace DataFactory.Generators
                 }
                 p.X += x0;
                 p.Y += y0;
+                Debug.WriteLine($"Rotating point: {p}");
             }
             return data;
         }

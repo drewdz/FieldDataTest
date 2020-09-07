@@ -13,6 +13,7 @@
 using DataFactory.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 
@@ -64,6 +65,7 @@ namespace DataFactory.Generators
 
         public List<EventData> Generate(long millis)
         {
+            Debug.WriteLine($"Generate throw... {millis}");
             var data = new List<EventData>();
             var tags = new List<string>();
             foreach (var target in _Activity.Targets)
@@ -78,15 +80,23 @@ namespace DataFactory.Generators
                 //  walk to starting point
                 data.AddRange(Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x0, y0) }));
                 millis = data.Max(w => w.Timestamp) + 1000;     //   1 second to aim
-                //  get the angle to the target
-                var aZ = (float)Math.Atan2(target.Bounds.Y0 - y0, target.Bounds.X0 - x0);
-                aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
-                //  generate initial velocity and throw
-                var v = VMIN + ((float)_Random.NextDouble() * VRANGE);
-                data.AddRange(GenerateThrow(millis, tag, x0, y0, v, aZ, _Activity.Bounds));
-                var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
-                //  1 second delay between throws
-                millis = last.Timestamp + 1000;
+                for (int i = 0; i < 3; i++)
+                {
+                    //  get the angle to the target
+                    var aZ = (float)Math.Atan2(target.Bounds.Y0 - y0, target.Bounds.X0 - x0);
+                    aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
+                    if (_Activity.Direction < 0)
+                    {
+                        aZ = (float)Math.PI - aZ;
+                    }
+                    Debug.WriteLine($"Generate throw to target: ({target.Bounds.X0},{target.Bounds.Y0}), from: ({x0},{y0}), angle: {aZ} - {i}");
+                    //  generate initial velocity and throw
+                    var v = VMIN + ((float)_Random.NextDouble() * VRANGE);
+                    data.AddRange(GenerateThrow(millis, tag, x0, y0, v, aZ, _Activity.Bounds));
+                    var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
+                    //  1 second delay between throws
+                    millis = last.Timestamp + 1000;
+                }
             }
             //  collect balls and return to collection
             foreach (var tag in tags)
@@ -114,11 +124,11 @@ namespace DataFactory.Generators
                 if ((t > 0.1f) && ((z - Constants.EPSILON) <= 0)) break;
                 //  get location
                 x += (v.X * 0.1f) * _Activity.Direction;
-                z += (v.Y * 0.1f) * _Activity.Direction;
+                z += (v.Y * 0.1f);
                 //  decellarate by gravity
                 var d = Constants.G * 0.1f;
                 v = new Vector { X = v.X, Y = v.Y - d };
-                data.Add(new EventData
+                var pt = new EventData
                 {
                     R = r,
                     TagId = tag,
@@ -127,11 +137,14 @@ namespace DataFactory.Generators
                     X = x,
                     Y = 0,
                     Z = z
-                });
+                };
+                Debug.WriteLine($"Add new point: {pt}");
+                data.Add(pt);
                 t += 0.1f;
                 millis += 100;
             }
             //  rotate the kick into the direction of the kick / kick space
+            Debug.WriteLine("Rotating points...");
             foreach (var p in data)
             {
                 if (p.X > 0)
@@ -142,6 +155,7 @@ namespace DataFactory.Generators
                 }
                 p.X += x0;
                 p.Y += y0;
+                Debug.WriteLine($"Point rotated now - {p}");
             }
             return data;
         }
