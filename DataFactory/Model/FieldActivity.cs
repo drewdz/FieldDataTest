@@ -115,48 +115,43 @@ namespace DataFactory.Model
             GeneratePath(millis, false);
         }
 
-        public IEnumerable<EventData> CreateSamples(long millis, bool waitScan)
+        public List<EventData> CreateSamples(long millis, bool waitScan)
         {
             //  get a data point for this time
-            var data = _ActivityData?.FirstOrDefault(d => d.Timestamp == millis);
+            var data = _ActivityData?.FirstOrDefault();
+            if (data != null) data.Timestamp = millis;
             //  need to generate a new path
             if ((State != ActivityState.Waiting) && (data == null) && (millis > _MaxMillis))
             {
                 GeneratePath(millis, waitScan);
-                data = _ActivityData?.FirstOrDefault(d => d.Timestamp == millis);
+                data = _ActivityData?.FirstOrDefault(d => (d.Timestamp >= millis - 100) && (d.Timestamp <= millis));
             }
             //  return data
+            var outList = new List<EventData>();
             foreach (var tag in _Tags)
             {
                 if ((data != null) && (_SelectedTag != null) && (tag == _SelectedTag))
                 {
                     //  the in-use tag moves
                     tag.X = data.X; tag.Y = data.Y; tag.Z = data.Z; tag.V = data.V; tag.R = data.R;
-                    yield return new EventData { Timestamp = data.Timestamp, TagId = tag.TagId, X = data.X, Y = data.Y, V = data.V, R = data.R };
-                }
-                else
-                {
-                    yield return tag.ToEventData(millis);
-                }
-                //  make sure all the tags are at the queue point when this state changes
-                if ((data != null) && (State == ActivityState.ToQueue))
-                {
-                    tag.X = data.X; tag.Y = data.Y; tag.Z = data.Z; tag.V = data.V; tag.R = data.R;
+                    outList.Add(new EventData { Timestamp = data.Timestamp, TagId = tag.TagId, X = data.X, Y = data.Y, V = data.V, R = data.R });
                 }
             }
             //  remove data point from list
             if ((_ActivityData != null) && (data != null)) _ActivityData.Remove(data);
+            return outList;
         }
 
         private void GeneratePath(long millis, bool waitScan)
         {
+            Debug.WriteLine($"{Name} generating a new path: {waitScan}");
             var count = _Tags.Count(t => (t != _SelectedTag) && (!t.Used));
             if (count == 0)
             {
                 //  all tags used - need to take back to the queue point
                 var to = new PointF(QueuePoint.X0, QueuePoint.Y0);
                 var from = (_MaxMillis == 0) ? _Entrance : new PointF(CollectionPoint.X0, CollectionPoint.Y0);
-                _ActivityData = ((GeneratorBase)Generator).Walk(millis, string.Empty, new List<PointF> { from, to });
+                _ActivityData = ((GeneratorBase)Generator).Walk(millis, string.Empty, new List<PointF> { from, to }).OrderBy(d => d.Timestamp).ToList();
                 //  reset all tags
                 foreach (var tag in _Tags)
                 {
@@ -170,7 +165,7 @@ namespace DataFactory.Model
             else if (!waitScan)
             {
                 //  generate a new action
-                _ActivityData = Generator.Generate(millis);
+                _ActivityData = Generator.Generate(millis).OrderBy(d => d.Timestamp).ToList();
                 if (_SelectedTag != null)
                 {
                     _SelectedTag.Used = true;
@@ -184,6 +179,7 @@ namespace DataFactory.Model
             }
             else
             {
+                Debug.WriteLine($"{Name} is waiting");
                 if (CurrentPlayer != null) OnDoneAction?.Invoke(CurrentPlayer);
                 State = ActivityState.Waiting;
             }

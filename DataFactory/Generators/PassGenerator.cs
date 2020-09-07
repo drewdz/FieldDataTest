@@ -48,11 +48,12 @@ namespace DataFactory.Generators
 
         #region Operations
 
-        public List<EventData> Generate(DateTime startDate, int sampleCount)
+        public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
             if (sampleCount <= 0) sampleCount = 1;
             var data = new List<EventData>();
-            long runTime = startDate.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            //long runTime = startDate.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            long runTime = startDate.ToUnixTimeMilliseconds();
             for (int i = 0; i < sampleCount; i++)
             {
                 data.AddRange(Generate(runTime));
@@ -70,8 +71,8 @@ namespace DataFactory.Generators
                 var tag = Guid.NewGuid().ToString();
                 tags.Add(tag);
                 //  generate the start point
-                var x0 = _Activity.Bounds.X0 + (TWO_FEET / 2);
-                x0 += ((float)_Random.NextDouble() * TWO_FEET) - (TWO_FEET / 2);
+                var x0 = (_Activity.Direction >= 0) ? _Activity.Bounds.X0 : _Activity.Bounds.X1;
+                //x0 += ((float)_Random.NextDouble() * TWO_FEET) - (TWO_FEET / 2);
                 var y0 = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) / 2);
                 y0 += ((float)_Random.NextDouble() * TWO_FEET) - (TWO_FEET / 2);
                 //  walk to starting point
@@ -112,8 +113,8 @@ namespace DataFactory.Generators
                 //  check if we've hit the ground
                 if ((t > 0.1f) && ((z - Constants.EPSILON) <= 0)) break;
                 //  get location
-                x += v.X * 0.1f;
-                z += v.Y * 0.1f;
+                x += (v.X * 0.1f) * _Activity.Direction;
+                z += (v.Y * 0.1f) * _Activity.Direction;
                 //  decellarate by gravity
                 var d = Constants.G * 0.1f;
                 v = new Vector { X = v.X, Y = v.Y - d };

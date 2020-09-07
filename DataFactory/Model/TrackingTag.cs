@@ -20,7 +20,6 @@ namespace DataFactory.Model
 
         private Timer _Timer;
         private DataMonitor.Monitor _Monitor;
-        private DateTime _UnixEpoch = new DateTime(1970, 1, 1);
 
         #endregion Fields
 
@@ -108,7 +107,7 @@ namespace DataFactory.Model
 
         public override string ToString()
         {
-            return $"{DateTime.Now.Subtract(_UnixEpoch).Seconds},{TagId},{XOut},{YOut},{VOut},{ROut}";
+            return $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()},{TagId},{XOut},{YOut},{VOut},{ROut}";
         }
 
         public EventData ToEventData(long millis)

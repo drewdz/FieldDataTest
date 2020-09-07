@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 
 namespace DataFactory.Model
 {
@@ -6,18 +7,26 @@ namespace DataFactory.Model
     {
         #region Properties
 
+        [JsonProperty("id")]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
         public long Timestamp { get; set; }
 
+        [JsonProperty("chipId")]
         public string TagId { get; set; }
 
+        [JsonProperty("x")]
         public float X { get; set; }
 
+        [JsonProperty("y")]
         public float Y { get; set; }
 
         public float Z { get; set; }
 
+        [JsonProperty("velocity")]
         public float V { get; set; }
 
+        [JsonProperty("rpm")]
         public float R { get; set; }
 
         #endregion Properties
@@ -50,6 +59,7 @@ namespace DataFactory.Model
         {
             return new EventData
             {
+                Id = Id,
                 Timestamp = Timestamp,
                 TagId = TagId,
                 X = X,

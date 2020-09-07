@@ -13,19 +13,19 @@
 			"type": "Dash",
 			"typeId": "9bd9eddc-c75f-11ea-a125-42010aa80030",
 			"bounds": {
-				"x0": 60,
-				"y0": 10,
-				"x1": 180,
-				"y1": 20
+				"x0": 30,
+				"y0": 35,
+				"x1": 150,
+				"y1": 50
 			},
 			"Direction": 1,
 			"QueuePoint": {
-				"x0": 55,
-				"y0": 15
+				"x0": 25,
+				"y0": 40
 			},
 			"CollectionPoint": {
-				"x0": 185,
-				"y0": 15
+				"x0": 155,
+				"y0": 40
 			},
 			"TagCount": 5,
 			"UseBalls": false
@@ -37,19 +37,19 @@
 			"type": "Shuttle",
 			"typeId": "9b9ed4d5-c75f-11ea-a125-42010aa80030",
 			"bounds": {
-				"x0": 200,
-				"y0": 110,
-				"x1": 230,
-				"y1": 140
+				"x0": 105,
+				"y0": 5,
+				"x1": 135,
+				"y1": 25
 			},
 			"Direction": 1,
 			"QueuePoint": {
-				"x0": 215,
-				"y0": 105
+				"x0": 110,
+				"y0": 2
 			},
 			"CollectionPoint": {
-				"x0": 225,
-				"y0": 105
+				"x0": 110,
+				"y0": 0
 			},
 			"TagCount": 5,
 			"UseBalls": false
@@ -60,18 +60,18 @@
 			"color": "#0000FF",
 			"type": "Goal",
 			"bounds": {
-				"x0": 279,
-				"y0": 40,
-				"x1": 360,
-				"y1": 120
+				"x0": 0,
+				"y0": 60,
+				"x1": 60,
+				"y1": 100
 			},
-			"Direction": 1,
+			"Direction": -1,
 			"QueuePoint": {
-				"x0": 275,
+				"x0": 65,
 				"y0": 80
 			},
 			"CollectionPoint": {
-				"x0": 365,
+				"x0": -5,
 				"y0": 80
 			},
 			"TagCount": 5,
@@ -83,19 +83,19 @@
 			"color": "#000000",
 			"type": "Pass",
 			"bounds": {
-				"x0": 80,
-				"y0": 80,
-				"x1": 140,
-				"y1": 120
+				"x0": 30,
+				"y0": 110,
+				"x1": 90,
+				"y1": 160
 			},
-			"Direction": 1,
+			"Direction": -1,
 			"QueuePoint": {
-				"x0": 75,
-				"y0": 100
+				"x0": 95,
+				"y0": 115
 			},
 			"CollectionPoint": {
-				"x0": 145,
-				"y0": 100
+				"x0": 95,
+				"y0": 155
 			},
 			"TagCount": 5,
 			"UseBalls": true,
@@ -103,22 +103,22 @@
 				{
 					"name": "Target 1",
 					"bounds": {
-						"x0": 95,
-						"y0": 90
+						"x0": 75,
+						"y0": 115
 					}
 				},
 				{
 					"name": "Target 2",
 					"bounds": {
-						"x0": 105,
-						"y0": 110
+						"x0": 60,
+						"y0": 135
 					}
 				},
 				{
 					"name": "Target 3",
 					"bounds": {
-						"x0": 115,
-						"y0": 100
+						"x0": 30,
+						"y0": 155
 					}
 				}
 			]

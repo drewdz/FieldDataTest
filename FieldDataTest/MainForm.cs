@@ -35,13 +35,14 @@ namespace FieldDataTest
 
         #region Fields
 
+        private delegate void CrossDelegateMethod(string s);
         private List<EventData> _Data = new List<EventData>();
         private List<EventData> _LogData = new List<EventData>();
         private PlayingField _Field = new PlayingField();
         private bool _Running = false;
         private float _ScaleX, _ScaleY;
         private System.Threading.Timer _FieldTimer;
-        private long _Millis = 0;
+        //private long _Millis = 0;
         private float _Width, _Height;
         private DateTime _LastClick;
         private Bitmap _Background;
@@ -49,6 +50,11 @@ namespace FieldDataTest
         private bool _RunLogger = false;
         //private string _BaseUrl = "https://{0}-service-dot-hwp-legends-dev.nw.r.appspot.com/";
         private string _BaseUrl = "https://{0}-service-dot-hwp-legends.wl.r.appspot.com/";
+        private DateTime _LastTick = DateTime.Now;
+        private bool _ToFile = false;
+        private string _StreamFile = string.Empty;
+        private string _StreamText = string.Empty;
+        private bool _PauseOnly = false;
 
         #endregion Fields
 
@@ -184,9 +190,10 @@ namespace FieldDataTest
             if (_Running)
             {
                 StartWaitMenu.Visible = false;
-                _Millis = DateTime.Now.Subtract(DataFactory.Constants.UnixEpoch).Ticks / 10000;
-                Debug.WriteLine($"Start: {_Millis}");
-                foreach (var activity in _Field.Activities) activity.Init(_Millis);
+                //_Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                //_Millis = DateTimeOffset.Now.Subtract(Constants.UnixEpoch).Milliseconds;
+                //Debug.WriteLine($"Start: {_Millis}");
+                foreach (var activity in _Field.Activities) activity.Init(DateTimeOffset.Now.ToUnixTimeMilliseconds());
                 _FieldTimer = new System.Threading.Timer(Tick, waitScan, 0, 100);
             }
             else
@@ -205,8 +212,28 @@ namespace FieldDataTest
 
         private void StartMenu_Click(object sender, EventArgs e)
         {
+            if (_ToFile)
+            {
+                if (string.IsNullOrWhiteSpace(_StreamFile))
+                {
+                    if (SaveFile.ShowDialog(this) == DialogResult.Cancel) return;
+                    _StreamFile = SaveFile.FileName;
+                }
+                if (File.Exists(_StreamFile))
+                {
+                    if (MessageBox.Show(this, $"The file \"{_StreamFile}\" already exists. Would you like to overwrite it?", string.Empty, MessageBoxButtons.YesNo) == DialogResult.No)
+                    {
+                        _StreamFile = string.Empty;
+                        return;
+                    }
+                    File.Delete(_StreamFile);
+                }
+            }
+
             BaseAddressMenu.Enabled = false;
+            _LastTick = DateTime.Now;
             new Thread(LoggerLoop).Start();
+            new Thread(CheckLogger).Start();
         }
 
         private void StopMenu_Click(object sender, EventArgs e)
@@ -263,6 +290,106 @@ namespace FieldDataTest
 
         }
 
+        private void LoadDataMenu_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                OpenFile.Filter = "All JSON Files (*.json)|*.json";
+                if (OpenFile.ShowDialog(this) != DialogResult.OK) return;
+                using (var streamReader = new StreamReader(OpenFile.FileName))
+                {
+                    var data = Serializer.Deserialize<List<EventData>>(streamReader.ReadToEnd());
+                    data.ForEach(d =>
+                    {
+                        d.X /= 10;
+                        d.Y /= 10;
+                    });
+                    _Data = data;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception loading data: {ex}");
+            }
+        }
+
+        private void ClearTrackingMenu_Click(object sender, EventArgs e)
+        {
+            ClearTrackingMenu.Enabled = false;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    //  get all tracking data
+                    SetStatus("Getting data to remove...");
+                    using (var restService = new RestService())
+                    {
+                        var result = await restService.GetAsync<List<EventData>>(string.Format($"{_BaseUrl}domain/trackingdata", "activity"));
+                        if ((result == null) || (result.Count == 0))
+                        {
+                            Debug.WriteLine("No data found to delete.");
+                            Status.Text = string.Empty;
+                            return;
+                        }
+                        //  remove from backend
+                        int count = 0, total = result.Count;
+                        SetStatus($"Clearing records - {count}/{total}");
+                        //result.AsParallel().ForAll(async d =>
+                        foreach (var d in result)
+                        {
+                            try
+                            {
+                                await restService.DeleteAsync(string.Format($"{_BaseUrl}domain/trackingdata/delete?tracking_data_id={d.Id}", "activity"));
+                                count++;
+                                if ((count % 100) == 0) SetStatus($"Clearing records - {count}/{total}");
+                            }
+                            catch (Exception ix)
+                            {
+                                Debug.WriteLine($"Exception in parallel process: {ix}");
+                            }
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Exception clearing data: {ex}");
+                }
+                finally
+                {
+                    Status.Text = string.Empty;
+                }
+                return;
+            });
+            ClearTrackingMenu.Enabled = true;
+        }
+
+        private void StreamFileMenu_Click(object sender, EventArgs e)
+        {
+            _ToFile = !_ToFile;
+            StreamFileMenu.Checked = _ToFile;
+        }
+
+        private void timeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //MessageBox.Show($"DateTime.Now: {DateTime.Now}\r\nDateTime.Now.-UTC: {DateTime.Now.ToUniversalTime()}\r\nDateTimeOffset.Now: {DateTimeOffset.Now}\r\nDateTimeOffset.Now.-UTC: {DateTimeOffset.Now.ToUniversalTime()}\r\nDateTimeOffset.UtcNow: {DateTimeOffset.UtcNow}");
+
+            //var now = DateTimeOffset.UtcNow;
+            //var nowMillis1 = now.ToUnixTimeMilliseconds();
+            //var nowMillis2 = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            //var n1 = DateTimeOffset.FromUnixTimeMilliseconds(nowMillis1);
+            //var n2 = DateTimeOffset.FromUnixTimeMilliseconds(nowMillis2);
+            //var n3 = DateTimeOffset.FromUnixTimeMilliseconds(1598968914449);
+            //MessageBox.Show($"Now: {now}\r\nMillis 1: {nowMillis1}\r\nMillis 2: {nowMillis2}\r\nN1: {n1}\r\nN2: {n2}\r\nN3: {n3}");
+
+            MessageBox.Show($"Now: {DateTimeOffset.Now:yyyy-MM-ddTHH:mm:ss.fffzz00}");
+        }
+
+        private void PauseMenu_Click(object sender, EventArgs e)
+        {
+            _PauseOnly = !_PauseOnly;
+            PauseMenu.Checked = _PauseOnly;
+        }
+
         #endregion Event Handlers
 
         #region Actions
@@ -271,21 +398,16 @@ namespace FieldDataTest
         {
             if (_Data.Count > 0)
             {
-                var millis = _Data.Max(d => d.Timestamp) - 10000;
-                _Data.RemoveAll(d => d.Timestamp < millis);
+                _Data.RemoveAll(d => d.Timestamp < (DateTimeOffset.Now.ToUnixTimeMilliseconds() - 10000));
             }
             var waitScan = (o == null) ? false : (bool)o;
+            var holding = new List<EventData>();
             foreach (var activity in _Field.Activities)
             {
-                var data = activity.CreateSamples(_Millis, waitScan);
-                //  stream data
-                if ((data == null) || (data.Count() == 0)) continue;
-                //  add data to the log list
-                _LogData.AddRange(data.Select(d => d.Copy()).ToList());
-                //  add data to plot list
-                _Data.AddRange(data.Select(d => d.Copy()).ToList());
+                holding.AddRange(activity.CreateSamples(DateTimeOffset.Now.ToUnixTimeMilliseconds(), waitScan));
             }
-            _Millis += 100;
+            _Data.AddRange(holding);
+            if (_RunLogger) holding.ForEach(d => _LogData.Add(d.Copy()));
         }
 
         private void RenderLoop(object sender, EventArgs e)
@@ -293,8 +415,6 @@ namespace FieldDataTest
             try
             {
                 if ((_Field == null) || (_Field.Activities == null) || (_Field.Activities.Count == 0)) return;
-
-                var data = _Data.ToList();
 
                 float width = FIELD_WIDTH + _Field.Padding.X0 + _Field.Padding.X1, height = FIELD_HEIGHT + _Field.Padding.Y0 + _Field.Padding.Y1;
                 _ScaleX = _Width / width; _ScaleY = _Height / height;
@@ -320,9 +440,9 @@ namespace FieldDataTest
                         gc.FillEllipse(Brushes.Red, x, y - 5, 5, 5);
                     }
 
-                    if ((data != null) && (data.Count() > 0))
+                    if ((_Data != null) && (_Data.Count > 0))
                     {
-                        foreach (var d in data)
+                        foreach (var d in _Data)
                         {
                             if (d == null) continue;
                             //Debug.WriteLine(d);
@@ -330,7 +450,6 @@ namespace FieldDataTest
                             gc.DrawRectangle(Pens.Black, x, y - 1, 1, 1);
                         }
                     }
-                    data = null;
                     gc.Flush();
                 }
                 MainImage.Image = back;
@@ -345,10 +464,38 @@ namespace FieldDataTest
 
         #region Logger
 
+        private void CheckLogger(object o)
+        {
+            Debug.WriteLine("Checker running...");
+            try
+            {
+                while (_RunLogger)
+                {
+                    if (DateTime.Now.Subtract(_LastTick).TotalMilliseconds > 1000) break;
+                    Thread.Sleep(1000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in logger checker: {ex}");
+            }
+            finally
+            {
+                Debug.WriteLine("Logger seems to have stopped, restarting...");
+                //  restart
+                if (_RunLogger)
+                {
+                    _RunLogger = false;
+                    StartMenu_Click(null, null);
+                }
+            }
+        }
+
         private void LoggerLoop(object o)
         {
             if (_RunLogger) return;
             _RunLogger = true;
+            _StreamText = string.Empty;
 
 
             try
@@ -357,22 +504,46 @@ namespace FieldDataTest
                 //  connect
                 var client = new TcpClient("34.94.247.16", 9000);
                 var stream = client.GetStream();
+                int count = 0;
                 using (var sw = new StreamWriter(stream))
                 {
                     while (_RunLogger)
                     {
+                        _LastTick = DateTime.Now;
                         //  get records to send
-                        var dd = _LogData.ToList();
-                        if ((dd != null) && (dd.Count > 0))
+                        if ((_LogData != null) && (_LogData.Count > 0))
                         {
-                            foreach (var d in dd)
+                            var dd = _LogData.Select(d => d.Copy()).ToList();
+                            Debug.WriteLine($"Log: Sending {dd.Count} records");
+                            if ((dd != null) && (dd.Count > 0))
                             {
-                                if (d == null) continue;
-                                sw.WriteLine(d.ToString());
-                                _LogData.Remove(d);
+                                foreach (var d in dd)
+                                {
+                                    if (d == null) continue;
+                                    var s = d.ToString();
+                                    sw.WriteLine(s);
+                                    if (_ToFile) _StreamText += (string.IsNullOrWhiteSpace(_StreamText)) ? s : $"\r\n{s}";
+                                    _LogData.Remove(_LogData.FirstOrDefault(i => i.Id.Equals(d.Id)));
+                                }
                             }
                         }
-                        Thread.Sleep(5);
+                        Thread.Sleep(10);
+                        count++;
+                        if (count >= 500)
+                        {
+                            if (!string.IsNullOrWhiteSpace(_StreamText))
+                            {
+                                using (var fileStream = new FileStream(_StreamFile, FileMode.OpenOrCreate, FileAccess.Write))
+                                {
+                                    using (var fileSw = new StreamWriter(fileStream))
+                                    {
+                                        fileSw.WriteLine(_StreamText);
+                                        fileSw.Flush();
+                                    }
+                                }
+                            }
+                            count = 0;
+                        }
                     }
                     sw.Flush();
                 }
@@ -393,6 +564,18 @@ namespace FieldDataTest
         #endregion Logger
 
         #region Helpers
+
+        private void SetStatus(string status)
+        {
+            if (!MainStatus.InvokeRequired)
+            {
+                Status.Text = status;
+            }
+            else
+            {
+                MainStatus.Invoke(new CrossDelegateMethod(SetStatus), new object[] { status });
+            }
+        }
 
         public static Color ToColor(string hex)
         {
@@ -420,6 +603,13 @@ namespace FieldDataTest
             if ((activity == null) || (activity.State != ActivityState.Waiting)) return;
             try
             {
+                if (_PauseOnly)
+                {
+                    MessageBox.Show(this, "Click ok after scanning a lanyard.", "Scan Pause", MessageBoxButtons.OK);
+                    activity.ReadyUp(DateTimeOffset.Now.ToUnixTimeMilliseconds());
+                    return;
+                }
+
                 var frm = new InputForm("Barcode", "Scan/Enter Barcode", string.Empty);
                 if (frm.ShowDialog(this) == DialogResult.Cancel) return;
                 //  create player activity object
@@ -427,19 +617,23 @@ namespace FieldDataTest
                 {
                     ActivityId = activity.Id,
                     LanyardId = frm.Result,
-                    Scanned = DateTime.Now.ToUniversalTime(),
-                    StartTime = DateTime.Now.ToUniversalTime(),
+                    Scanned = DateTimeOffset.UtcNow,
+                    StartTime = DateTime.UtcNow,
                     State = 1
                 };
                 var s = Serializer.Serialize(player);
                 //  create new player activity record
-                var result = await RestService.PostAsync<PlayerActivity, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
-                if (result.Status != ServiceResultStatus.Success)
+                using (var restService = new RestService())
                 {
-                    throw new Exception(result.Message);
+                    restService.EchoOn = true;
+                    var result = await restService.PostAsync<ServiceResult<PlayerActivity>, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
+                    if (result.Status != ServiceResultStatus.Success)
+                    {
+                        throw new Exception(result.Message);
+                    }
+                    activity.CurrentPlayer = result.Payload;
+                    activity.ReadyUp(DateTimeOffset.Now.ToUnixTimeMilliseconds());
                 }
-                activity.CurrentPlayer = result.Payload;
-                activity.ReadyUp(_Millis);
             }
             catch (Exception ex)
             {
@@ -451,11 +645,16 @@ namespace FieldDataTest
         {
             try
             {
+                if (_PauseOnly) return;
                 //  update the player
-                player.EndTime = DateTime.Now.ToUniversalTime();
+                player.EndTime = DateTimeOffset.UtcNow;
                 player.State = 4;
                 //  update it
-                await RestService.PostAsync<PlayerActivity, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
+                using (var restService = new RestService())
+                {
+                    restService.EchoOn = true;
+                    await restService.PostAsync<PlayerActivity, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
+                }
             }
             catch (Exception ex)
             {

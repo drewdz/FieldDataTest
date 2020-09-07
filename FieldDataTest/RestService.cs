@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FieldDataTest
 {
-    public static class RestService
+    public class RestService : IDisposable
     {
         #region Constants
 
@@ -16,41 +16,68 @@ namespace FieldDataTest
 
         #endregion Constants
 
+        #region Fields
+
+        private HttpClient _Client = new HttpClient();
+
+        #endregion Fields
+
+        #region Properties
+
+        public bool EchoOn { get; set; } = false;
+
+        #endregion Properties
+
         #region Operations
 
-        public static async Task<ServiceResult<TResult>> PostAsync<TResult, TPayload>(string address, TPayload payload)
+        public async Task<TResult> PostAsync<TResult, TPayload>(string address, TPayload payload)
         {
-            Debug.WriteLine($"Post - {address}");
             var s = Serializer.Serialize(payload);
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "YWN0aXZpdHktc2VydmljZTpwYXNzd29yZA==");
-                HttpResponseMessage response = await client.PostAsync(address, new StringContent(s, Encoding.UTF8, CONTENT_TYPE));
+            if (EchoOn) Debug.WriteLine($"Post - {address}\r\n{s}");
 
-                if (!response.IsSuccessStatusCode) return new ServiceResult<TResult> { Status = ServiceResultStatus.Error, Message = response.ReasonPhrase };
+            if (_Client == null) _Client = new HttpClient();
 
-                var stream = await response.Content.ReadAsStringAsync();
-                if (stream == null) throw new Exception("No response from server.");
-                var result = Serializer.Deserialize<ServiceResult<TResult>>(stream);
-                return (result.Status == ServiceResultStatus.Success) ? result : new ServiceResult<TResult> { Status = ServiceResultStatus.Error, Message = response.ReasonPhrase };
-            }
+            _Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "YWN0aXZpdHktc2VydmljZTpwYXNzd29yZA==");
+            HttpResponseMessage response = await _Client.PostAsync(address, new StringContent(s, Encoding.UTF8, CONTENT_TYPE));
+
+            if (!response.IsSuccessStatusCode) throw new Exception(response.ReasonPhrase);
+
+            var stream = await response.Content.ReadAsStringAsync();
+            if (stream == null) throw new Exception("No response from server.");
+            if (EchoOn) Debug.WriteLine($"Post Response - {address}\r\n{stream}");
+            var result = Serializer.Deserialize<TResult>(stream);
+            return result;
         }
 
-        public static async Task<ServiceResult<TResult>> GetAsync<TResult>(string address)
+        public async Task<TResult> GetAsync<TResult>(string address)
         {
-            Debug.WriteLine($"Get - {address}");
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "YWN0aXZpdHktc2VydmljZTpwYXNzd29yZA==");
-                HttpResponseMessage response = await client.GetAsync(address);
+            if (EchoOn) Debug.WriteLine($"Get - {address}");
+            if (_Client == null) _Client = new HttpClient();
+            _Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "YWN0aXZpdHktc2VydmljZTpwYXNzd29yZA==");
+            HttpResponseMessage response = await _Client.GetAsync(address);
 
-                if (!response.IsSuccessStatusCode) return new ServiceResult<TResult> { Status = ServiceResultStatus.Error, Message = response.ReasonPhrase };
+            if (!response.IsSuccessStatusCode) throw new Exception(response.ReasonPhrase);
 
-                var stream = await response.Content.ReadAsStringAsync();
-                if (stream == null) throw new Exception("No response from server.");
-                var result = Serializer.Deserialize<ServiceResult<TResult>>(stream);
-                return (result.Status == ServiceResultStatus.Success) ? result : new ServiceResult<TResult> { Status = ServiceResultStatus.Error, Message = response.ReasonPhrase };
-            }
+            var stream = await response.Content.ReadAsStringAsync();
+            if (stream == null) throw new Exception("No response from server.");
+            var result = Serializer.Deserialize<TResult>(stream);
+            return result;
+        }
+
+        public async Task DeleteAsync(string address)
+        {
+            if (EchoOn) Debug.WriteLine($"Delete - {address}");
+            if (_Client == null) _Client = new HttpClient();
+            _Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "YWN0aXZpdHktc2VydmljZTpwYXNzd29yZA==");
+            HttpResponseMessage response = await _Client.DeleteAsync(address);
+            if (!response.IsSuccessStatusCode) throw new Exception(response.ReasonPhrase);
+        }
+
+        public void Dispose()
+        {
+            if (_Client == null) return;
+            _Client.Dispose();
+            _Client = null;
         }
 
         #endregion Operations

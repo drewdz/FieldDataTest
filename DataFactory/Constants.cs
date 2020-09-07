@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace DataFactory
 {
@@ -6,9 +7,19 @@ namespace DataFactory
     {
         #region Static Members
 
-        public static DateTime UnixEpoch { get; } = new DateTime(1970, 1, 1);
+        //public static DateTimeOffset UnixEpoch { get; private set; }
 
         #endregion Static Members
+
+        #region Constructors
+
+        static Constants()
+        {
+            //  = new DateTime(1970, 1, 1);
+            //UnixEpoch = DateTimeOffset.Parse("1970-01-01T00:00:00+00:00");
+        }
+
+        #endregion Constructors
 
         #region Constants
 

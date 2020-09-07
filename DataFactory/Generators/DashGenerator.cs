@@ -10,6 +10,7 @@ using DataFactory.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -50,11 +51,12 @@ namespace DataFactory.Generators
 
         #region Operations
 
-        public List<EventData> Generate(DateTime startDate, int sampleCount)
+        public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
+            Debug.WriteLine("Dash generator");
             if (sampleCount <= 0) sampleCount = 1;
             var data = new List<EventData>();
-            long runTime = startDate.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            long runTime = startDate.ToUnixTimeMilliseconds();
             for(int i = 0; i < sampleCount; i++)
             {
                 data.AddRange(Generate(runTime));
@@ -65,21 +67,26 @@ namespace DataFactory.Generators
 
         public List<EventData> Generate(long millis)
         {
+            Debug.WriteLine("Dash generate");
             var tag = Guid.NewGuid().ToString();
             //  generate an average velocity for this runner
             var v = 9 + (RANGE * (float)_Random.NextDouble());
             //  generate a starting point
-            var x = _Activity.Bounds.X0;
+            var x = (_Activity.Direction >= 0) ? _Activity.Bounds.X0 : _Activity.Bounds.X1;
             var y = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) * (float)_Random.NextDouble());
             //  walk to starting point
+            Debug.WriteLine($"Dash generate walk - q: {_Activity.QueuePoint.X0},{_Activity.QueuePoint.Y0}, to: {x},{y}, dir: {_Activity.Direction}");
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y)});
             millis = data.Max(w => w.Timestamp) + 100;
             //  run
+            Debug.WriteLine($"Dash generate - points: {data.Count}, v: {v}, x: {x}, y: {y}, dir: {_Activity.Direction}");
             data.AddRange(GenerateRun(millis, tag, x, y, v, 0.65f, _Activity.Bounds));
             //  walk to collection point
             var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
             millis = last.Timestamp + 100;
+            Debug.WriteLine($"Dash generate walk - points: {data.Count}, from: {last.X},{last.Y}, collect: {_Activity.CollectionPoint.X0},{_Activity.CollectionPoint.Y0}, dir: {_Activity.Direction}");
             data.AddRange(Walk(millis, tag, new List<PointF> { new PointF(last.X, last.Y), new PointF(_Activity.CollectionPoint.X0, _Activity.CollectionPoint.Y0) }));
+            Debug.WriteLine($"Dash generate done - points: {data.Count}, dir: {_Activity.Direction}");
             return data;
         }
 
@@ -90,8 +97,9 @@ namespace DataFactory.Generators
             float t = 0;
             bool accelarating = true;
             var data = new List<EventData>();
-            while (x < bounds.X1)
+            while (true)
             {
+                if (((_Activity.Direction >= 0) && (x >= bounds.X1)) || ((_Activity.Direction < 0) && (x <= bounds.X0))) break;
                 //  get the velocity for this sample
                 if (accelarating)
                 {
@@ -107,7 +115,7 @@ namespace DataFactory.Generators
                     v = vMax + ((float)_Random.NextDouble() * variance) - (variance / 2);
                 }
                 //  move
-                x += v * 0.1f;
+                x += (v * 0.1f) * _Activity.Direction;
                 //  TODO: move y toward the centre
                 data.Add(new EventData
                 {

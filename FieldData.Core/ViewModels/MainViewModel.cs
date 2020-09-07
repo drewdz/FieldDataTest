@@ -161,7 +161,8 @@ namespace FieldData.Core.ViewModels
 
         private void RunField()
         {
-            _Millis = DateTime.Now.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            //_Millis = DateTimeOffset.Now.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            _Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             Debug.WriteLine($"Start: {_Millis}");
             foreach (var activity in Field.Activities) activity.Init(_Millis);
             _FieldTimer = new Timer(Tick, ScanOn, 0, 100);

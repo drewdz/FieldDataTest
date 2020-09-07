@@ -18,7 +18,7 @@ namespace DataFactory.Generators
 
         void Init(FieldActivity activity);
 
-        List<EventData> Generate(DateTime startDate, int sampleCount);
+        List<EventData> Generate(DateTimeOffset startDate, int sampleCount);
 
         List<EventData> Generate(long millis);
 

@@ -48,11 +48,12 @@ namespace DataFactory.Generators
 
         #region Operations
 
-        public List<EventData> Generate(DateTime startDate, int sampleCount)
+        public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
             if (sampleCount <= 0) sampleCount = 1;
             var data = new List<EventData>();
-            long runTime = startDate.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            //long runTime = startDate.Subtract(Constants.UnixEpoch).Ticks / 10000;
+            long runTime = startDate.ToUnixTimeMilliseconds();
             for (int i = 0; i < sampleCount; i++)
             {
                 data.AddRange(Generate(runTime));

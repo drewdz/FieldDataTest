@@ -21,9 +21,10 @@ namespace DataFactory.Model
 
         #region Initialize
 
-        public void Init(DateTime time)
+        public void Init(DateTimeOffset time)
         {
-            _Millis = time.Subtract(Constants.UnixEpoch).Milliseconds;
+            //_Millis = time.Subtract(Constants.UnixEpoch).Milliseconds;
+            _Millis = time.ToUnixTimeMilliseconds();
             foreach (var activity in Activities)
             {
                 activity.Init(_Millis);
