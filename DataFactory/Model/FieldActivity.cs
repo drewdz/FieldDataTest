@@ -17,6 +17,17 @@ namespace DataFactory.Model
         ToQueue
     }
 
+    public enum ActivityMode : int
+    {
+        Calibration = 0,
+        Ready = 1,
+        Fail = 2,
+        Cone1 = 100,
+        Cone2 = 101,
+        Cone3 = 102,
+        Cone4 = 103
+    }
+
     public class FieldActivity : INotifyPropertyChanged
     {
         #region Events
@@ -78,6 +89,13 @@ namespace DataFactory.Model
 
         public Action<PlayerActivity> OnDoneAction { get; set; }
 
+        [JsonProperty]
+        public ActivityMode ActivityMode { get; set; } = ActivityMode.Ready;
+
+        public List<TrackingTag> Cones { get; set; }
+
+        public List<string> Payload { get; set; }
+
         #endregion Properties
 
         #region Init
@@ -120,29 +138,36 @@ namespace DataFactory.Model
 
         public List<EventData> CreateSamples(long millis, bool waitScan)
         {
-            //  get a data point for this time
-            var data = _ActivityData?.FirstOrDefault();
-            if (data != null) data.Timestamp = millis;
-            //  need to generate a new path
-            if ((State != ActivityState.Waiting) && (data == null) && (millis > _MaxMillis))
+            if (ActivityMode != ActivityMode.Ready)
             {
-                GeneratePath(millis, waitScan);
-                data = _ActivityData?.FirstOrDefault(d => (d.Timestamp >= millis - 100) && (d.Timestamp <= millis));
+                return (Cones == null) ? new List<EventData>() : Cones.Select(c => c.ToEventData(millis)).ToList();
             }
-            //  return data
-            var outList = new List<EventData>();
-            foreach (var tag in _Tags)
+            else
             {
-                if ((data != null) && (_SelectedTag != null) && (tag == _SelectedTag))
+                //  get a data point for this time
+                var data = _ActivityData?.FirstOrDefault();
+                if (data != null) data.Timestamp = millis;
+                //  need to generate a new path
+                if ((State != ActivityState.Waiting) && (data == null) && (millis > _MaxMillis))
                 {
-                    //  the in-use tag moves
-                    tag.X = data.X; tag.Y = data.Y; tag.Z = data.Z; tag.V = data.V; tag.R = data.R;
-                    outList.Add(new EventData { Timestamp = data.Timestamp, TagId = tag.TagId, X = data.X, Y = data.Y, V = data.V, R = data.R });
+                    GeneratePath(millis, waitScan);
+                    data = _ActivityData?.FirstOrDefault(d => (d.Timestamp >= millis - 100) && (d.Timestamp <= millis));
                 }
+                //  return data
+                var outList = new List<EventData>();
+                foreach (var tag in _Tags)
+                {
+                    if ((data != null) && (_SelectedTag != null) && (tag == _SelectedTag))
+                    {
+                        //  the in-use tag moves
+                        tag.X = data.X; tag.Y = data.Y; tag.Z = data.Z; tag.V = data.V; tag.R = data.R;
+                        outList.Add(new EventData { Timestamp = data.Timestamp, TagId = tag.TagId, X = data.X, Y = data.Y, V = data.V, R = data.R });
+                    }
+                }
+                //  remove data point from list
+                if ((_ActivityData != null) && (data != null)) _ActivityData.Remove(data);
+                return outList;
             }
-            //  remove data point from list
-            if ((_ActivityData != null) && (data != null)) _ActivityData.Remove(data);
-            return outList;
         }
 
         private void GeneratePath(long millis, bool waitScan)

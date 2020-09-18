@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace DataFactory.Model
@@ -30,6 +31,12 @@ namespace DataFactory.Model
 
         [JsonProperty("state", NullValueHandling = NullValueHandling.Ignore)]
         public int State { get; set; }
+
+        [JsonProperty("age")]
+        public int Age { get; set; } = 0;
+
+        [JsonProperty("processed")]
+        public int Processed { get; set; } = 0;
     }
 
     public class DateTimeConverter : IsoDateTimeConverter

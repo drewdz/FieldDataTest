@@ -61,6 +61,12 @@
     <Compile Include="ActivitiesForm.Designer.cs">
       <DependentUpon>ActivitiesForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ConesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ConesForm.Designer.cs">
+      <DependentUpon>ConesForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="InputForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -91,6 +97,9 @@
     </Compile>
     <EmbeddedResource Include="ActivitiesForm.resx">
       <DependentUpon>ActivitiesForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ConesForm.resx">
+      <DependentUpon>ConesForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="InputForm.resx">
       <DependentUpon>InputForm.cs</DependentUpon>

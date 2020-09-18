@@ -54,6 +54,8 @@ namespace FieldDataTest
         private string _StreamFile = string.Empty;
         private string _StreamText = string.Empty;
         private bool _PauseOnly = false;
+        private Font _Font;
+        private FieldActivity _SetupActivity = null;
 
         #endregion Fields
 
@@ -62,6 +64,7 @@ namespace FieldDataTest
         public MainForm()
         {
             InitializeComponent();
+            _Font = new Font("Arial Narrow", 8);
         }
 
         public MainForm(List<EventData> data)
@@ -215,16 +218,83 @@ namespace FieldDataTest
 
             foreach (var activity in _Field.Activities)
             {
-                var h = activity.Bounds.Y1 - activity.Bounds.Y0;
-                var w = activity.Bounds.X1 - activity.Bounds.X0;
-                Debug.WriteLine($"Checking activity: {activity.Name} - {activity.Bounds.X0}, {activity.Bounds.Y0}, {w}, {h}");
-                var rect = new Rectangle((int)activity.Bounds.X0, (int)activity.Bounds.Y0, (int)w, (int)h);
-                if (rect.IntersectsWith(new Rectangle((int)x, (int)y, 1, 1)))
+                if (e.Button == MouseButtons.Left)
                 {
-                    Debug.WriteLine($"You have clicked {activity.Name}");
-                    SendScan(activity);
-                    break;
+                    if (activity.ActivityMode == ActivityMode.Cone1)
+                    {
+                        Debug.WriteLine($"{activity.Name} - placing cone 1");
+                        _SetupActivity.Cones[0].X = x; _SetupActivity.Cones[0].Y = y;
+                        Status.Text = $"{activity.Name} - Place cone 2";
+                        activity.ActivityMode = ActivityMode.Cone2;
+                    }
+                    else if (activity.ActivityMode == ActivityMode.Cone2)
+                    {
+                        Debug.WriteLine($"{activity.Name} - placing cone 2");
+                        _SetupActivity.Cones[1].X = x; _SetupActivity.Cones[1].Y = y;
+                        Status.Text = $"{activity.Name} - Place cone 3";
+                        activity.ActivityMode = ActivityMode.Cone3;
+                    }
+                    else if (activity.ActivityMode == ActivityMode.Cone3)
+                    {
+                        Debug.WriteLine($"{activity.Name} - placing cone 3");
+                        _SetupActivity.Cones[2].X = x; _SetupActivity.Cones[2].Y = y;
+                        Status.Text = $"{activity.Name} - Place cone 4";
+                        activity.ActivityMode = ActivityMode.Cone4;
+                    }
+                    else if (activity.ActivityMode == ActivityMode.Cone4)
+                    {
+                        Debug.WriteLine($"{activity.Name} - placing cone 4");
+                        _SetupActivity.Cones[3].X = x; _SetupActivity.Cones[3].Y = y;
+                        //  find min and max
+                        float dx0 = float.MaxValue, dy0 = float.MaxValue, dx1 = float.MinValue, dy1 = float.MinValue;
+                        foreach (var cone in _SetupActivity.Cones)
+                        {
+                            if (cone.X < dx0) dx0 = cone.X;
+                            if (cone.X > dx1) dx1 = cone.X;
+                            if (cone.Y < dy0) dy0 = cone.Y;
+                            if (cone.Y > dy1) dy1 = cone.Y;
+                        }
+                        Status.Text = $"{activity.Name} - Waiting for calibratrion";
+                        activity.ActivityMode = ActivityMode.Calibration;
+                        new Thread(StartCallibration).Start(null);
+                    }
+                    else if (activity.ActivityMode == ActivityMode.Calibration)
+                    {
+                        Debug.WriteLine($"{activity.Name} - Cancel calibration");
+                        Status.Text = $"{activity.Name} - Cancel calibration";
+                        activity.ActivityMode = ActivityMode.Fail;
+                    }
+                    else if (activity.ActivityMode == ActivityMode.Fail)
+                    {
+                        Debug.WriteLine($"{activity.Name} - Calibration failed");
+                        Status.Text = $"{activity.Name} - Cancel calibration";
+                        _SetupActivity = null;
+                        activity.ActivityMode = ActivityMode.Ready;
+                    }
+                    else
+                    {
+                        Status.Text = string.Empty;
+                        var h = activity.Bounds.Y1 - activity.Bounds.Y0;
+                        var w = activity.Bounds.X1 - activity.Bounds.X0;
+                        Debug.WriteLine($"Checking activity: {activity.Name} - {activity.Bounds.X0}, {activity.Bounds.Y0}, {w}, {h}");
+                        var rect = new Rectangle((int)activity.Bounds.X0, (int)activity.Bounds.Y0, (int)w, (int)h);
+                        if (rect.IntersectsWith(new Rectangle((int)x, (int)y, 1, 1)))
+                        {
+                            Debug.WriteLine($"You have clicked {activity.Name} - ({activity.Bounds.X0},{activity.Bounds.Y0},{activity.Bounds.X1},{activity.Bounds.Y1})");
+                            if (e.Button == MouseButtons.Left)
+                            {
+                                SendScan(activity);
+                            }
+                        }
+                    }
                 }
+                else if ((e.Button == MouseButtons.Right) && (_SetupActivity == null))
+                {
+                    Debug.WriteLine($"Preparing to setup activity: {activity.Name}");
+                    _SetupActivity = activity;
+                    StartSetup();
+                }
+                break;
             }
         }
 
@@ -241,6 +311,11 @@ namespace FieldDataTest
             PauseMenu.Checked = _PauseOnly;
             SimStatus.Text = (_PauseOnly) ? "Use Scanner App" : "Simulate Scanner";
             SimStatus.BackColor = (_PauseOnly) ? Color.IndianRed : SystemColors.Control;
+        }
+
+        private void ExitMenu_Click(object sender, EventArgs e)
+        {
+            Close();
         }
 
         #endregion Event Handlers
@@ -285,6 +360,10 @@ namespace FieldDataTest
                         float x = (_Field.Padding.X0 + activity.Bounds.X0) * _ScaleX, y = (height - _Field.Padding.Y0 - activity.Bounds.Y0) * _ScaleY;
                         float w = (activity.Bounds.X1 - activity.Bounds.X0) * _ScaleX, h = (activity.Bounds.Y1 - activity.Bounds.Y0) * _ScaleY;
                         gc.DrawRectangle(p, x, y - h, w, h);
+                        //  name
+                        var size = gc.MeasureString(activity.Name, _Font);
+                        x = x + (w / 2) - (size.Width / 2); y = y - (h / 2) - (size.Height / 2);
+                        gc.DrawString(activity.Name, _Font, Brushes.Black, x, y);
                         //  queue point
                         x = (_Field.Padding.X0 + activity.QueuePoint.X0) * _ScaleX; y = (height - _Field.Padding.Y0 - activity.QueuePoint.Y0) * _ScaleY;
                         gc.FillEllipse(Brushes.Black, x, y - 5, 5, 5);
@@ -434,6 +513,82 @@ namespace FieldDataTest
 
         #region Helpers
 
+        private void StartSetup()
+        {
+            var frm = new ConesForm();
+            if (frm.ShowDialog(this) != DialogResult.OK) return;
+            _SetupActivity.Cones = new List<TrackingTag>
+            {
+                new TrackingTag { TagId = frm.Id1 },
+                new TrackingTag { TagId = frm.Id2 },
+                new TrackingTag { TagId = frm.Id3 },
+                new TrackingTag { TagId = frm.Id4 }
+            };
+            Status.Text = $"{_SetupActivity?.Name} - Place cone 1";
+            _SetupActivity.ActivityMode = ActivityMode.Cone1;
+        }
+
+        private async void StartCallibration(object o)
+        {
+            try
+            {
+                using (var restService = new RestService())
+                {
+                    //  get activity
+                    var result = await restService.GetAsync<ServiceResult<FieldActivity>>(string.Format($"{_BaseUrl}activity/id?activityId={_SetupActivity.Id}"));
+                    if (result.Status != ServiceResultStatus.Success) throw new Exception($"Could not get activity {_SetupActivity.Name}, {_SetupActivity.Id}");
+                    //  update
+                    result.Payload.Payload = _SetupActivity.Cones.Select(c => c.TagId).ToList();
+                    result = await restService.PostAsync<ServiceResult<FieldActivity>, FieldActivity>(string.Format($"{_BaseUrl}activity/update"), result.Payload);
+                    if (result.Status != ServiceResultStatus.Success) throw new Exception($"Could not update activity {_SetupActivity.Name}, {_SetupActivity.Id}");
+                    //  poll for status change
+                    var start = DateTime.Now;
+                    while (true)
+                    {
+                        if (DateTime.Now.Subtract(start).TotalSeconds >= 60)
+                        {
+                            Debug.WriteLine($"Activity setup failed - Timeout expired, {_SetupActivity.Name}");
+                            Status.Text = $"{_SetupActivity.Name} - Setup failed, timeout expired.";
+                            await Task.Delay(1500);
+                            Status.Text = string.Empty;
+                            throw new Exception("Timeout expired");
+                        }
+                        Thread.Sleep(100);
+                        result = await restService.GetAsync<ServiceResult<FieldActivity>>(string.Format($"{_BaseUrl}activity/id?activityId={_SetupActivity.Id}"));
+                        if (result.Status != ServiceResultStatus.Success) throw new Exception($"Could not get activity {_SetupActivity.Name}, {_SetupActivity.Id}");
+                        if (result.Payload.ActivityMode == ActivityMode.Ready)
+                        {
+                            Debug.WriteLine($"Activity setup complete, {_SetupActivity.Name}");
+                            _SetupActivity.Bounds = result.Payload.Bounds;
+                            _SetupActivity.ActivityMode = ActivityMode.Ready;
+                            Status.Text = $"{_SetupActivity.Name} - Setup complete.";
+                            await Task.Delay(1500);
+                            Status.Text = string.Empty;
+                            break;
+                        }
+                        else if (result.Payload.ActivityMode == ActivityMode.Fail)
+                        {
+                            Debug.WriteLine($"Activity setup failed, {_SetupActivity.Name}");
+                            _SetupActivity.ActivityMode = ActivityMode.Fail;
+                            Status.Text = $"{_SetupActivity.Name} - Setup failed.";
+                            await Task.Delay(1500);
+                            Status.Text = string.Empty;
+                            _SetupActivity.ActivityMode = ActivityMode.Ready;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to start callibration for {_SetupActivity.Name}: {ex}");
+                Status.Text = $"{_SetupActivity.Name} - Setup exception.";
+                await Task.Delay(1500);
+                Status.Text = string.Empty;
+                _SetupActivity.ActivityMode = ActivityMode.Ready;
+            }
+        }
+
         private void SetStatus(string status)
         {
             if (!MainStatus.InvokeRequired)
@@ -508,11 +663,6 @@ namespace FieldDataTest
             {
                 Debug.WriteLine($"Exception: {ex}");
             }
-        }
-
-        private void ExitMenu_Click(object sender, EventArgs e)
-        {
-            Close();
         }
 
         private async Task DoneAction(PlayerActivity player)
