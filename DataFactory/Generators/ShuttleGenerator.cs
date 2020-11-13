@@ -10,6 +10,7 @@
 using DataFactory.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 
@@ -48,6 +49,33 @@ namespace DataFactory.Generators
 
         #region Operations
 
+        public override void SetQueues()
+        {
+            try
+            {
+                if (_Activity.Y1 > 80)
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X0 + ((_Activity.X1 - _Activity.X0) / 2), Y0 = _Activity.Y0 - 5 };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X0 + ((_Activity.X1 - _Activity.X0) / 2) + 5, Y0 = _Activity.Y0 - 5 };
+                    _Activity.Direction = 2;
+                }
+                else
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X0 + ((_Activity.X1 - _Activity.X0) / 2), Y1 = _Activity.Y1 + 5 };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X0 + ((_Activity.X1 - _Activity.X0) / 2) + 5, Y1 = _Activity.Y1 + 5 };
+                    _Activity.Direction = 3;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Could not set queues for shuttle. Exception: {ex}");
+            }
+        }
+
         public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
             if (sampleCount <= 0) sampleCount = 1;
@@ -68,8 +96,8 @@ namespace DataFactory.Generators
             //  generate an average velocity for this runner
             var v = 9 + (RANGE * (float)_Random.NextDouble());
             //  generate a starting point
-            var x = _Activity.Bounds.X0 + ((_Activity.Bounds.X1 - _Activity.Bounds.X0) / 2f);
-            var y = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) * (float)_Random.NextDouble());
+            var x = _Activity.X0 + ((_Activity.X1 - _Activity.X0) / 2f);
+            var y = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) * (float)_Random.NextDouble());
             //  walk to starting point
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y) });
             millis = data.Max(w => w.Timestamp) + 100;
@@ -85,10 +113,10 @@ namespace DataFactory.Generators
         {
             var data = new List<EventData>();
             //  run to the right -> 15 ft to max X
-            data.AddRange(GenerateRunPart(millis, tag, x, y, vMax, variance, _Activity.Bounds.X1));
+            data.AddRange(GenerateRunPart(millis, tag, x, y, vMax, variance, _Activity.X1));
             //  run to the left -> 30 ft to min x
             var from = data[data.Count - 1];
-            data.AddRange(GenerateRunPart(from.Timestamp + 100, tag, from.X, from.Y, vMax, variance, _Activity.Bounds.X0));
+            data.AddRange(GenerateRunPart(from.Timestamp + 100, tag, from.X, from.Y, vMax, variance, _Activity.X0));
             //  run to the start -> 15 ft to half way
             from = data[data.Count - 1];
             data.AddRange(GenerateRunPart(from.Timestamp + 100, tag, from.X, from.Y, vMax, variance, x));

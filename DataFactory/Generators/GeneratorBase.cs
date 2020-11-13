@@ -37,6 +37,8 @@ namespace DataFactory.Generators
             _Activity = activity;
         }
 
+        public abstract void SetQueues();
+
         public virtual List<EventData> Walk(long millis, string tag, List<PointF> points)
         {
             if ((points == null) || (points.Count < 2)) throw new Exception("Need at least 2 points to generate a walk");

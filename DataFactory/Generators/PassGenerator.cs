@@ -49,6 +49,31 @@ namespace DataFactory.Generators
 
         #region Operations
 
+        public override void SetQueues()
+        {
+            try
+            {
+                if (_Activity.Direction > 0)
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X1 + 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X0 - 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                }
+                else
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X0 - 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X1 + 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Could not set queues for pass. Exception: {ex}");
+            }
+        }
+
         public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
             if (sampleCount <= 0) sampleCount = 1;
@@ -73,9 +98,9 @@ namespace DataFactory.Generators
                 var tag = Guid.NewGuid().ToString();
                 tags.Add(tag);
                 //  generate the start point
-                var x0 = (_Activity.Direction >= 0) ? _Activity.Bounds.X0 : _Activity.Bounds.X1;
+                var x0 = (_Activity.Direction == 0) ? _Activity.X0 : _Activity.X1;
                 //x0 += ((float)_Random.NextDouble() * TWO_FEET) - (TWO_FEET / 2);
-                var y0 = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) / 2);
+                var y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2);
                 y0 += ((float)_Random.NextDouble() * TWO_FEET) - (TWO_FEET / 2);
                 //  walk to starting point
                 data.AddRange(Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x0, y0) }));
@@ -83,16 +108,16 @@ namespace DataFactory.Generators
                 for (int i = 0; i < 3; i++)
                 {
                     //  get the angle to the target
-                    var aZ = (float)Math.Atan2(target.Bounds.Y0 - y0, target.Bounds.X0 - x0);
+                    var aZ = (float)Math.Atan2(target.Y0 - y0, target.X0 - x0);
                     aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
-                    if (_Activity.Direction < 0)
+                    if (_Activity.Direction > 0)
                     {
                         aZ = (float)Math.PI - aZ;
                     }
-                    Debug.WriteLine($"Generate throw to target: ({target.Bounds.X0},{target.Bounds.Y0}), from: ({x0},{y0}), angle: {aZ} - {i}");
+                    Debug.WriteLine($"Generate throw to target: ({target.X0},{target.Y0}), from: ({x0},{y0}), angle: {aZ} - {i}");
                     //  generate initial velocity and throw
                     var v = VMIN + ((float)_Random.NextDouble() * VRANGE);
-                    data.AddRange(GenerateThrow(millis, tag, x0, y0, v, aZ, _Activity.Bounds));
+                    data.AddRange(GenerateThrow(millis, tag, x0, y0, v, aZ));
                     var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
                     //  1 second delay between throws
                     millis = last.Timestamp + 1000;
@@ -109,7 +134,7 @@ namespace DataFactory.Generators
             return data;
         }
 
-        private List<EventData> GenerateThrow(long millis, string tag, float x0, float y0, float s, float aZ, BoundingBox bounds)
+        private List<EventData> GenerateThrow(long millis, string tag, float x0, float y0, float s, float aZ)
         {
             var a = (_Random.NextDouble() * ARANGE);
             var v = new Vector(s, (float)a);
@@ -118,12 +143,13 @@ namespace DataFactory.Generators
             //  throw the ball already!
             float x = 0, z = 0, t = 0;
             var data = new List<EventData>();
+            var direction = (_Activity.Direction == 0) ? 1 : -1;
             while (true)
             {
                 //  check if we've hit the ground
                 if ((t > 0.1f) && ((z - Constants.EPSILON) <= 0)) break;
                 //  get location
-                x += (v.X * 0.1f) * _Activity.Direction;
+                x += (v.X * 0.1f) * direction;
                 z += (v.Y * 0.1f);
                 //  decellarate by gravity
                 var d = Constants.G * 0.1f;

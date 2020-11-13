@@ -89,6 +89,7 @@
             this.Cone4.Name = "Cone4";
             this.Cone4.Size = new System.Drawing.Size(290, 20);
             this.Cone4.TabIndex = 3;
+            this.Cone4.TextChanged += new System.EventHandler(this.OnTextChanged);
             // 
             // label4
             // 
@@ -107,6 +108,7 @@
             this.Cone3.Name = "Cone3";
             this.Cone3.Size = new System.Drawing.Size(290, 20);
             this.Cone3.TabIndex = 2;
+            this.Cone3.TextChanged += new System.EventHandler(this.OnTextChanged);
             // 
             // label3
             // 
@@ -125,6 +127,7 @@
             this.Cone2.Name = "Cone2";
             this.Cone2.Size = new System.Drawing.Size(290, 20);
             this.Cone2.TabIndex = 1;
+            this.Cone2.TextChanged += new System.EventHandler(this.OnTextChanged);
             // 
             // label2
             // 
@@ -143,6 +146,7 @@
             this.Cone1.Name = "Cone1";
             this.Cone1.Size = new System.Drawing.Size(290, 20);
             this.Cone1.TabIndex = 0;
+            this.Cone1.TextChanged += new System.EventHandler(this.OnTextChanged);
             // 
             // label1
             // 
@@ -169,7 +173,6 @@
             this.Padding = new System.Windows.Forms.Padding(3);
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Configuration Cones";
-            this.Load += new System.EventHandler(this.ConesForm_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);

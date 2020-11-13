@@ -15,6 +15,7 @@ using System.Drawing;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 
 namespace DataFactory.Generators
 {
@@ -51,6 +52,31 @@ namespace DataFactory.Generators
 
         #region Operations
 
+        public override void SetQueues()
+        {
+            try
+            {
+                if (_Activity.Direction > 0)
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X1 + 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X0 - 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                }
+                else
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X0 - 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X1 + 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Could not set queues for dash. Exception: {ex}");
+            }
+        }
+
         public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
             Debug.WriteLine("Dash generator");
@@ -72,15 +98,15 @@ namespace DataFactory.Generators
             //  generate an average velocity for this runner
             var v = 9 + (RANGE * (float)_Random.NextDouble());
             //  generate a starting point
-            var x = (_Activity.Direction >= 0) ? _Activity.Bounds.X0 : _Activity.Bounds.X1;
-            var y = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) * (float)_Random.NextDouble());
+            var x = (_Activity.Direction == 0) ? _Activity.X0 : _Activity.X1;
+            var y = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) * (float)_Random.NextDouble());
             //  walk to starting point
             Debug.WriteLine($"Dash generate walk - q: {_Activity.QueuePoint.X0},{_Activity.QueuePoint.Y0}, to: {x},{y}, dir: {_Activity.Direction}");
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y)});
             millis = data.Max(w => w.Timestamp) + 100;
             //  run
             Debug.WriteLine($"Dash generate - points: {data.Count}, v: {v}, x: {x}, y: {y}, dir: {_Activity.Direction}");
-            data.AddRange(GenerateRun(millis, tag, x, y, v, 0.65f, _Activity.Bounds));
+            data.AddRange(GenerateRun(millis, tag, x, y, v, 0.65f));
             //  walk to collection point
             var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
             millis = last.Timestamp + 100;
@@ -90,16 +116,17 @@ namespace DataFactory.Generators
             return data;
         }
 
-        private List<EventData> GenerateRun(long millis, string tag, float x, float y, float vMax, float variance, BoundingBox bounds)
+        private List<EventData> GenerateRun(long millis, string tag, float x, float y, float vMax, float variance)
         {
             var timeToMax = 6f / (MAX_V_IN + (float)_Random.NextDouble());
             float v = 0;
             float t = 0;
             bool accelarating = true;
             var data = new List<EventData>();
+            var direction = (_Activity.Direction == 0) ? 1 : -1;
             while (true)
             {
-                if (((_Activity.Direction >= 0) && (x >= bounds.X1)) || ((_Activity.Direction < 0) && (x <= bounds.X0))) break;
+                if (((direction >= 0) && (x >= _Activity.X1)) || ((direction < 0) && (x <= _Activity.X0))) break;
                 //  get the velocity for this sample
                 if (accelarating)
                 {
@@ -115,7 +142,7 @@ namespace DataFactory.Generators
                     v = vMax + ((float)_Random.NextDouble() * variance) - (variance / 2);
                 }
                 //  move
-                x += (v * 0.1f) * _Activity.Direction;
+                x += (v * 0.1f) * direction;
                 //  TODO: move y toward the centre
                 data.Add(new EventData
                 {

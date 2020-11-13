@@ -1,29 +1,20 @@
 ﻿using DataFactory;
 using DataFactory.Model;
+using FieldDataTest.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Xsl;
 
 namespace FieldDataTest
 {
-    public partial class MainForm : Form
+    public partial class MainForm : BaseForm<MainViewModel>
     {
         #region Constants
 
@@ -35,7 +26,6 @@ namespace FieldDataTest
 
         #region Fields
 
-        private delegate void CrossDelegateMethod(string s);
         private List<EventData> _Data = new List<EventData>();
         private List<EventData> _LogData = new List<EventData>();
         private PlayingField _Field = new PlayingField();
@@ -142,16 +132,25 @@ namespace FieldDataTest
                     {
                         activity.OnDoneAction = async (p) => await DoneAction(p);
                         activity.Init(0);
+                        var item = new ToolStripMenuItem(activity.Name);
+                        item.Tag = activity;
+                        item.Click += ActivitySetupMenu_Click;
+                        SetupMenu.DropDownItems.Add(item);
                     }
                 }
             }
+
+            //  get activities
+            Task.Run(async () =>
+            {
+                await GetActivitiesAsync();
+                RunMenu_Click(this, e);
+            });
 
             _RenderTimer = new System.Windows.Forms.Timer();
             _RenderTimer.Tick += RenderLoop;
             _RenderTimer.Interval = 20;
             _RenderTimer.Start();
-
-            RunMenu_Click(this, e);
         }
 
         private void RunMenu_Click(object sender, EventArgs e)
@@ -218,83 +217,73 @@ namespace FieldDataTest
 
             foreach (var activity in _Field.Activities)
             {
-                if (e.Button == MouseButtons.Left)
+                if (activity.ActivityMode == ActivityMode.Cone1)
                 {
-                    if (activity.ActivityMode == ActivityMode.Cone1)
+                    Debug.WriteLine($"{activity.Name} - placing cone 1");
+                    _SetupActivity.Cones[0].X = x; _SetupActivity.Cones[0].Y = y;
+                    Status.Text = $"{activity.Name} - Place cone 2";
+                    activity.ActivityMode = ActivityMode.Cone2;
+                }
+                else if (activity.ActivityMode == ActivityMode.Cone2)
+                {
+                    Debug.WriteLine($"{activity.Name} - placing cone 2");
+                    _SetupActivity.Cones[1].X = x; _SetupActivity.Cones[1].Y = y;
+                    Status.Text = $"{activity.Name} - Place cone 3";
+                    activity.ActivityMode = ActivityMode.Cone3;
+                }
+                else if (activity.ActivityMode == ActivityMode.Cone3)
+                {
+                    Debug.WriteLine($"{activity.Name} - placing cone 3");
+                    _SetupActivity.Cones[2].X = x; _SetupActivity.Cones[2].Y = y;
+                    Status.Text = $"{activity.Name} - Place cone 4";
+                    activity.ActivityMode = ActivityMode.Cone4;
+                }
+                else if (activity.ActivityMode == ActivityMode.Cone4)
+                {
+                    Debug.WriteLine($"{activity.Name} - placing cone 4");
+                    _SetupActivity.Cones[3].X = x; _SetupActivity.Cones[3].Y = y;
+                    //  find min and max
+                    float dx0 = float.MaxValue, dy0 = float.MaxValue, dx1 = float.MinValue, dy1 = float.MinValue;
+                    foreach (var cone in _SetupActivity.Cones)
                     {
-                        Debug.WriteLine($"{activity.Name} - placing cone 1");
-                        _SetupActivity.Cones[0].X = x; _SetupActivity.Cones[0].Y = y;
-                        Status.Text = $"{activity.Name} - Place cone 2";
-                        activity.ActivityMode = ActivityMode.Cone2;
+                        if (cone.X < dx0) dx0 = cone.X;
+                        if (cone.X > dx1) dx1 = cone.X;
+                        if (cone.Y < dy0) dy0 = cone.Y;
+                        if (cone.Y > dy1) dy1 = cone.Y;
                     }
-                    else if (activity.ActivityMode == ActivityMode.Cone2)
+                    Status.Text = $"{activity.Name} - Waiting for calibratrion";
+                    activity.ActivityMode = ActivityMode.Calibration;
+                    new Thread(StartCallibration).Start(null);
+                }
+                else if (activity.ActivityMode == ActivityMode.Calibration)
+                {
+                    Debug.WriteLine($"{activity.Name} - Cancel calibration");
+                    Status.Text = $"{activity.Name} - Cancel calibration";
+                    activity.ActivityMode = ActivityMode.Fail;
+                }
+                else if (activity.ActivityMode == ActivityMode.Fail)
+                {
+                    Debug.WriteLine($"{activity.Name} - Calibration failed");
+                    Status.Text = $"{activity.Name} - Cancel calibration";
+                    _SetupActivity = null;
+                    activity.ActivityMode = ActivityMode.Ready;
+                }
+                else
+                {
+                    Status.Text = string.Empty;
+                    var h = activity.Y1 - activity.Y0;
+                    var w = activity.X1 - activity.X0;
+                    Debug.WriteLine($"Checking activity: {activity.Name} - {activity.X0}, {activity.Y0}, {w}, {h}");
+                    var rect = new Rectangle((int)activity.X0, (int)activity.Y0, (int)w, (int)h);
+                    if (rect.IntersectsWith(new Rectangle((int)x, (int)y, 1, 1)))
                     {
-                        Debug.WriteLine($"{activity.Name} - placing cone 2");
-                        _SetupActivity.Cones[1].X = x; _SetupActivity.Cones[1].Y = y;
-                        Status.Text = $"{activity.Name} - Place cone 3";
-                        activity.ActivityMode = ActivityMode.Cone3;
-                    }
-                    else if (activity.ActivityMode == ActivityMode.Cone3)
-                    {
-                        Debug.WriteLine($"{activity.Name} - placing cone 3");
-                        _SetupActivity.Cones[2].X = x; _SetupActivity.Cones[2].Y = y;
-                        Status.Text = $"{activity.Name} - Place cone 4";
-                        activity.ActivityMode = ActivityMode.Cone4;
-                    }
-                    else if (activity.ActivityMode == ActivityMode.Cone4)
-                    {
-                        Debug.WriteLine($"{activity.Name} - placing cone 4");
-                        _SetupActivity.Cones[3].X = x; _SetupActivity.Cones[3].Y = y;
-                        //  find min and max
-                        float dx0 = float.MaxValue, dy0 = float.MaxValue, dx1 = float.MinValue, dy1 = float.MinValue;
-                        foreach (var cone in _SetupActivity.Cones)
+                        Debug.WriteLine($"You have clicked {activity.Name} - ({activity.X0},{activity.Y0},{activity.X1},{activity.Y1})");
+                        if (e.Button == MouseButtons.Left)
                         {
-                            if (cone.X < dx0) dx0 = cone.X;
-                            if (cone.X > dx1) dx1 = cone.X;
-                            if (cone.Y < dy0) dy0 = cone.Y;
-                            if (cone.Y > dy1) dy1 = cone.Y;
-                        }
-                        Status.Text = $"{activity.Name} - Waiting for calibratrion";
-                        activity.ActivityMode = ActivityMode.Calibration;
-                        new Thread(StartCallibration).Start(null);
-                    }
-                    else if (activity.ActivityMode == ActivityMode.Calibration)
-                    {
-                        Debug.WriteLine($"{activity.Name} - Cancel calibration");
-                        Status.Text = $"{activity.Name} - Cancel calibration";
-                        activity.ActivityMode = ActivityMode.Fail;
-                    }
-                    else if (activity.ActivityMode == ActivityMode.Fail)
-                    {
-                        Debug.WriteLine($"{activity.Name} - Calibration failed");
-                        Status.Text = $"{activity.Name} - Cancel calibration";
-                        _SetupActivity = null;
-                        activity.ActivityMode = ActivityMode.Ready;
-                    }
-                    else
-                    {
-                        Status.Text = string.Empty;
-                        var h = activity.Bounds.Y1 - activity.Bounds.Y0;
-                        var w = activity.Bounds.X1 - activity.Bounds.X0;
-                        Debug.WriteLine($"Checking activity: {activity.Name} - {activity.Bounds.X0}, {activity.Bounds.Y0}, {w}, {h}");
-                        var rect = new Rectangle((int)activity.Bounds.X0, (int)activity.Bounds.Y0, (int)w, (int)h);
-                        if (rect.IntersectsWith(new Rectangle((int)x, (int)y, 1, 1)))
-                        {
-                            Debug.WriteLine($"You have clicked {activity.Name} - ({activity.Bounds.X0},{activity.Bounds.Y0},{activity.Bounds.X1},{activity.Bounds.Y1})");
-                            if (e.Button == MouseButtons.Left)
-                            {
-                                SendScan(activity);
-                            }
+                            SendScan(activity);
                         }
                     }
                 }
-                else if ((e.Button == MouseButtons.Right) && (_SetupActivity == null))
-                {
-                    Debug.WriteLine($"Preparing to setup activity: {activity.Name}");
-                    _SetupActivity = activity;
-                    StartSetup();
-                }
-                break;
             }
         }
 
@@ -316,6 +305,53 @@ namespace FieldDataTest
         private void ExitMenu_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void ActivitySetupMenu_Click(object sender, EventArgs e)
+        {
+            FieldActivity activity = null;
+            ToolStripMenuItem item = null;
+            if (sender != null)
+            {
+                item = (ToolStripMenuItem)sender;
+                activity = (FieldActivity)item.Tag;
+            }
+            else
+            {
+                activity = _SetupActivity;
+                foreach (var child in SetupMenu.DropDownItems)
+                {
+                    if (((ToolStripMenuItem)child).Tag == activity)
+                    {
+                        item = (ToolStripMenuItem)child;
+                        break;
+                    }
+                }
+            }
+
+            if (activity.ActivityMode != ActivityMode.Ready)
+            {
+                Debug.WriteLine($"{_SetupActivity.Name} already in setup mode - cancel");
+                _SetupActivity.ActivityMode = ActivityMode.Ready;
+                foreach (var child in item.GetCurrentParent().Items)
+                {
+                    SetEnabled((ToolStripMenuItem)child, true);
+                }
+                return;
+            }
+
+            foreach (var child in item.GetCurrentParent().Items)
+            {
+                SetEnabled((ToolStripMenuItem)child, false);
+            }
+
+            _SetupActivity = activity;
+            StartSetup();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_RunLogger) _RunLogger = false;
         }
 
         #endregion Event Handlers
@@ -357,8 +393,8 @@ namespace FieldDataTest
                     foreach (var activity in _Field.Activities)
                     {
                         var p = (activity.State == ActivityState.Ready) ? Pens.Orange : (activity.State == ActivityState.Waiting) ? Pens.LightGreen : Pens.Red;
-                        float x = (_Field.Padding.X0 + activity.Bounds.X0) * _ScaleX, y = (height - _Field.Padding.Y0 - activity.Bounds.Y0) * _ScaleY;
-                        float w = (activity.Bounds.X1 - activity.Bounds.X0) * _ScaleX, h = (activity.Bounds.Y1 - activity.Bounds.Y0) * _ScaleY;
+                        float x = (_Field.Padding.X0 + activity.X0) * _ScaleX, y = (height - _Field.Padding.Y0 - activity.Y0) * _ScaleY;
+                        float w = (activity.X1 - activity.X0) * _ScaleX, h = (activity.Y1 - activity.Y0) * _ScaleY;
                         gc.DrawRectangle(p, x, y - h, w, h);
                         //  name
                         var size = gc.MeasureString(activity.Name, _Font);
@@ -434,7 +470,7 @@ namespace FieldDataTest
             {
                 Debug.WriteLine("Starting logging stream");
                 //  connect
-                var client = new TcpClient("34.94.247.16", 9000);
+                var client = new TcpClient("34.94.121.139", 9000);
                 var stream = client.GetStream();
                 int count = 0;
                 using (var sw = new StreamWriter(stream))
@@ -454,6 +490,7 @@ namespace FieldDataTest
                                     if (d == null) continue;
                                     var s = d.ToString();
                                     sw.WriteLine(s);
+                                    Debug.WriteLine($"Log: {s}");
                                     if (_ToFile) _StreamText += (string.IsNullOrWhiteSpace(_StreamText)) ? s : $"\r\n{s}";
                                     _LogData.Remove(_LogData.FirstOrDefault(i => i.Id.Equals(d.Id)));
                                 }
@@ -495,17 +532,24 @@ namespace FieldDataTest
 
         private void SetStreamStatus(string text)
         {
-            if (MainStatus.InvokeRequired)
+            try
             {
-                MainStatus.Invoke(new CrossDelegateMethod(SetStreamStatus), new object[] { text });
+                if (MainStatus.InvokeRequired)
+                {
+                    MainStatus.Invoke(new CrossDelegateMethod(SetStreamStatus), new object[] { text });
+                }
+                else
+                {
+                    var streaming = text.Equals("Streaming");
+                    var color = (streaming) ? Color.DarkSeaGreen : SystemColors.Control;
+                    StartMenu.Text = (streaming) ? "Stop Streaming" : "Start Streaming";
+                    StreamStatus.Text = text;
+                    StreamStatus.BackColor = color;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var streaming = text.Equals("Streaming");
-                var color = (streaming) ? Color.DarkSeaGreen : SystemColors.Control;
-                StartMenu.Text = (streaming) ? "Stop Streaming" : "Start Streaming";
-                StreamStatus.Text = text;
-                StreamStatus.BackColor = color;
+                Debug.WriteLine($"Unable to set status: {ex}");
             }
         }
 
@@ -519,10 +563,10 @@ namespace FieldDataTest
             if (frm.ShowDialog(this) != DialogResult.OK) return;
             _SetupActivity.Cones = new List<TrackingTag>
             {
-                new TrackingTag { TagId = frm.Id1 },
-                new TrackingTag { TagId = frm.Id2 },
-                new TrackingTag { TagId = frm.Id3 },
-                new TrackingTag { TagId = frm.Id4 }
+                new TrackingTag { TagId = frm.ViewModel.Cone1 },
+                new TrackingTag { TagId = frm.ViewModel.Cone2 },
+                new TrackingTag { TagId = frm.ViewModel.Cone3 },
+                new TrackingTag { TagId = frm.ViewModel.Cone4 }
             };
             Status.Text = $"{_SetupActivity?.Name} - Place cone 1";
             _SetupActivity.ActivityMode = ActivityMode.Cone1;
@@ -535,11 +579,13 @@ namespace FieldDataTest
                 using (var restService = new RestService())
                 {
                     //  get activity
-                    var result = await restService.GetAsync<ServiceResult<FieldActivity>>(string.Format($"{_BaseUrl}activity/id?activityId={_SetupActivity.Id}"));
+                    var baseUrl = string.Format(_BaseUrl, "activity");
+                    var result = await restService.GetAsync<ServiceResult<FieldActivity>>($"{baseUrl}activity/id?activityId={_SetupActivity.Id}");
                     if (result.Status != ServiceResultStatus.Success) throw new Exception($"Could not get activity {_SetupActivity.Name}, {_SetupActivity.Id}");
                     //  update
-                    result.Payload.Payload = _SetupActivity.Cones.Select(c => c.TagId).ToList();
-                    result = await restService.PostAsync<ServiceResult<FieldActivity>, FieldActivity>(string.Format($"{_BaseUrl}activity/update"), result.Payload);
+                    result.Payload.Payload = _SetupActivity.Cones;
+                    result.Payload.ActivityMode = ActivityMode.Calibration;
+                    result = await restService.PostAsync<ServiceResult<FieldActivity>, FieldActivity>($"{baseUrl}activity/update", result.Payload);
                     if (result.Status != ServiceResultStatus.Success) throw new Exception($"Could not update activity {_SetupActivity.Name}, {_SetupActivity.Id}");
                     //  poll for status change
                     var start = DateTime.Now;
@@ -554,13 +600,18 @@ namespace FieldDataTest
                             throw new Exception("Timeout expired");
                         }
                         Thread.Sleep(100);
-                        result = await restService.GetAsync<ServiceResult<FieldActivity>>(string.Format($"{_BaseUrl}activity/id?activityId={_SetupActivity.Id}"));
+                        result = await restService.GetAsync<ServiceResult<FieldActivity>>($"{baseUrl}activity/id?activityId={_SetupActivity.Id}");
                         if (result.Status != ServiceResultStatus.Success) throw new Exception($"Could not get activity {_SetupActivity.Name}, {_SetupActivity.Id}");
                         if (result.Payload.ActivityMode == ActivityMode.Ready)
                         {
                             Debug.WriteLine($"Activity setup complete, {_SetupActivity.Name}");
-                            _SetupActivity.Bounds = result.Payload.Bounds;
-                            _SetupActivity.ActivityMode = ActivityMode.Ready;
+                            _SetupActivity.X0 = result.Payload.X0;
+                            _SetupActivity.Y0 = result.Payload.Y0;
+                            _SetupActivity.X1 = result.Payload.X1;
+                            _SetupActivity.Y1 = result.Payload.Y1;
+                            _SetupActivity.Direction = result.Payload.Direction;
+                            _SetupActivity.Generator.SetQueues();
+                            ActivitySetupMenu_Click(null, null);
                             Status.Text = $"{_SetupActivity.Name} - Setup complete.";
                             await Task.Delay(1500);
                             Status.Text = string.Empty;
@@ -573,7 +624,7 @@ namespace FieldDataTest
                             Status.Text = $"{_SetupActivity.Name} - Setup failed.";
                             await Task.Delay(1500);
                             Status.Text = string.Empty;
-                            _SetupActivity.ActivityMode = ActivityMode.Ready;
+                            ActivitySetupMenu_Click(null, null);
                             break;
                         }
                     }
@@ -585,7 +636,7 @@ namespace FieldDataTest
                 Status.Text = $"{_SetupActivity.Name} - Setup exception.";
                 await Task.Delay(1500);
                 Status.Text = string.Empty;
-                _SetupActivity.ActivityMode = ActivityMode.Ready;
+                ActivitySetupMenu_Click(null, null);
             }
         }
 
@@ -598,6 +649,18 @@ namespace FieldDataTest
             else
             {
                 MainStatus.Invoke(new CrossDelegateMethod(SetStatus), new object[] { status });
+            }
+        }
+
+        private void SetEnabled(ToolStripMenuItem item, bool enabled)
+        {
+            if (!MainMenu.InvokeRequired)
+            {
+                item.Enabled = enabled;
+            }
+            else
+            {
+                MainMenu.Invoke(new CrossDelegateMethod<ToolStripMenuItem, bool>(SetEnabled), new object[] { item, enabled });
             }
         }
 
@@ -620,6 +683,44 @@ namespace FieldDataTest
             var rMin = _Data.Min(d => d.R);
             var rMax = _Data.Max(d => d.R);
             Status.Text = $"{_Data?.Count}; Bounds ({xMin}, {yMin}), ({xMax}, {yMax}); Velocity ({vMin}, {vMax}); RVelocity ({rMin}, {rMax})";
+        }
+
+        private async Task GetActivitiesAsync()
+        {
+            try
+            {
+                //  create new player activity record
+                using (var restService = new RestService())
+                {
+                    restService.EchoOn = true;
+                    var result = await restService.GetAsync<ServiceResult<List<FieldActivity>>>(string.Format($"{_BaseUrl}activities", "activity"));
+                    if (result.Status != ServiceResultStatus.Success)
+                    {
+                        throw new Exception(result.Message);
+                    }
+                    //  apply bounds to setup
+                    foreach (var item in result.Payload)
+                    {
+                        //  find the activity
+                        var activity = _Field.Activities.FirstOrDefault(a => a.Id.Equals(item.Id));
+                        if (activity == null)
+                        {
+                            Debug.WriteLine($"Could not find activity - {item.Name}, {item.Id}");
+                            continue;
+                        }
+                        activity.X0 = item.X0;
+                        activity.Y0 = item.Y0;
+                        activity.X1 = item.X1;
+                        activity.Y1 = item.Y1;
+                        activity.Direction = item.Direction;
+                        activity.Generator.SetQueues();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Could not get activities. Exception: {ex}");
+            }
         }
 
         private async Task SendScan(FieldActivity activity)

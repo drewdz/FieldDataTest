@@ -54,6 +54,31 @@ namespace DataFactory.Generators
 
         #region Operations
 
+        public override void SetQueues()
+        {
+            try
+            {
+                if (_Activity.Direction > 0)
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X1 + 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X0 - 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                }
+                else
+                {
+                    //  queue point
+                    _Activity.QueuePoint = new BoundingBox { X0 = _Activity.X0 - 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                    //  collect point
+                    _Activity.CollectionPoint = new BoundingBox { X0 = _Activity.X1 + 5, Y0 = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2) };
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Could not set queues for goal. Exception: {ex}");
+            }
+        }
+
         public List<EventData> Generate(DateTimeOffset startDate, int sampleCount)
         {
             if (sampleCount <= 0) sampleCount = 1;
@@ -106,14 +131,14 @@ namespace DataFactory.Generators
         private List<EventData> Generate(long millis, string tag)
         {
             //  generate a starting point
-            var x = (_Activity.Direction >= 0) ? _Activity.Bounds.X0 : _Activity.Bounds.X1;
-            var y = _Activity.Bounds.Y0 + ((_Activity.Bounds.Y1 - _Activity.Bounds.Y0) * (float)_Random.NextDouble());
+            var x = (_Activity.Direction == 0) ? _Activity.X0 : _Activity.X1;
+            var y = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) * (float)_Random.NextDouble());
             //  walk to starting point
             var data = Walk(millis, tag, new List<PointF> { new PointF(_Activity.QueuePoint.X0, _Activity.QueuePoint.Y0), new PointF(x, y) });
             millis = data.Max(w => w.Timestamp) + 100;
             //  kick the ball
             Debug.WriteLine($"Generating kick - from: ({x},{y})...");
-            data.AddRange(GenerateFlight(millis, tag, x, y, _Activity.Bounds));
+            data.AddRange(GenerateFlight(millis, tag, x, y));
             //  collect the ball and carry it to collection
             var last = data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
             millis = last.Timestamp + 100;
@@ -121,7 +146,7 @@ namespace DataFactory.Generators
             return data;
         }
 
-        private List<EventData> GenerateFlight(long millis, string tag, float x0, float y0, BoundingBox bounds)
+        private List<EventData> GenerateFlight(long millis, string tag, float x0, float y0)
         {
             //  get initial velocity
             var s = (float)(VMIN + (_Random.NextDouble() * VRANGE));
@@ -131,13 +156,14 @@ namespace DataFactory.Generators
             var r = (float)_Random.NextDouble() * RMAX;
             //  kick the ball already!
             float x = 0, z = 0, t = 0;
+            var direction = (_Activity.Direction == 0) ? 1 : -1;
             var data = new List<EventData>();
             while (true)
             {
                 //  check if we've hit the ground
                 if ((t > 0.1f) && ((z - Constants.EPSILON) <= 0)) break;
                 //  get location
-                x += (v.X * 0.1f) * _Activity.Direction;
+                x += (v.X * 0.1f) * direction;
                 z += v.Y * 0.1f;
                 //  decelerate by gravity
                 var d = Constants.G * 0.1f;
@@ -158,8 +184,8 @@ namespace DataFactory.Generators
                 millis += 100;
             }
             //  get the angle to the centre of the uprights
-            var m = bounds.Y0 + ((bounds.Y1 - bounds.Y0) / 2);
-            var aZ = (float)Math.Atan2(m - y0, bounds.X1 - bounds.X0);
+            var m = _Activity.Y0 + ((_Activity.Y1 - _Activity.Y0) / 2);
+            var aZ = (float)Math.Atan2(m - y0, _Activity.X1 - _Activity.X0);
             aZ += ((float)_Random.NextDouble() * ARANGE) - (ARANGE / 2);
             //  rotate the kick into the direction of the kick / kick space
             Debug.WriteLine($"Rotate to kick space: {aZ}");

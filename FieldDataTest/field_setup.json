@@ -12,12 +12,10 @@
 			"color": "#00FF00",
 			"type": "Dash",
 			"typeId": "9bd9eddc-c75f-11ea-a125-42010aa80030",
-			"bounds": {
 				"x0": 30,
 				"y0": 35,
 				"x1": 150,
-				"y1": 50
-			},
+				"y1": 50,
 			"Direction": 1,
 			"QueuePoint": {
 				"x0": 25,
@@ -36,12 +34,10 @@
 			"color": "#FF0000",
 			"type": "Shuttle",
 			"typeId": "9b9ed4d5-c75f-11ea-a125-42010aa80030",
-			"bounds": {
 				"x0": 105,
 				"y0": 5,
 				"x1": 135,
-				"y1": 25
-			},
+				"y1": 25,
 			"Direction": 1,
 			"QueuePoint": {
 				"x0": 110,
@@ -59,12 +55,10 @@
 			"name": "Field Goal Challenge",
 			"color": "#0000FF",
 			"type": "Goal",
-			"bounds": {
 				"x0": 0,
 				"y0": 60,
 				"x1": 60,
-				"y1": 100
-			},
+				"y1": 100,
 			"Direction": -1,
 			"QueuePoint": {
 				"x0": 65,
@@ -82,12 +76,10 @@
 			"name": "Passing Challenge",
 			"color": "#000000",
 			"type": "Pass",
-			"bounds": {
 				"x0": 30,
 				"y0": 110,
 				"x1": 90,
-				"y1": 160
-			},
+				"y1": 160,
 			"Direction": -1,
 			"QueuePoint": {
 				"x0": 95,
@@ -102,24 +94,18 @@
 			"targets": [
 				{
 					"name": "Target 1",
-					"bounds": {
 						"x0": 75,
 						"y0": 115
-					}
 				},
 				{
 					"name": "Target 2",
-					"bounds": {
 						"x0": 60,
 						"y0": 135
-					}
 				},
 				{
 					"name": "Target 3",
-					"bounds": {
 						"x0": 30,
 						"y0": 155
-					}
 				}
 			]
 		}

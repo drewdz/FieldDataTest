@@ -48,7 +48,7 @@ namespace DataFactory.Model
 
         #region Properties
 
-        [JsonProperty]
+        [JsonProperty("id")]
         public string Id { get; set; }
 
         [JsonProperty]
@@ -60,8 +60,20 @@ namespace DataFactory.Model
         [JsonProperty]
         public string Color { get; set; }
 
+        //[JsonProperty]
+        //public BoundingBox Bounds { get; set; }
+
         [JsonProperty]
-        public BoundingBox Bounds { get; set; }
+        public float X0 { get; set; }
+
+        [JsonProperty]
+        public float Y0 { get; set; }
+
+        [JsonProperty]
+        public float X1 { get; set; }
+
+        [JsonProperty]
+        public float Y1 { get; set; }
 
         [JsonProperty]
         public int Direction { get; set; }
@@ -89,12 +101,13 @@ namespace DataFactory.Model
 
         public Action<PlayerActivity> OnDoneAction { get; set; }
 
-        [JsonProperty]
+        [JsonProperty("mode")]
         public ActivityMode ActivityMode { get; set; } = ActivityMode.Ready;
 
         public List<TrackingTag> Cones { get; set; }
 
-        public List<string> Payload { get; set; }
+        [JsonProperty("payload")]
+        public List<TrackingTag> Payload { get; set; }
 
         #endregion Properties
 

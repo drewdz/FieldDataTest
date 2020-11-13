@@ -61,6 +61,14 @@
     <Compile Include="ActivitiesForm.Designer.cs">
       <DependentUpon>ActivitiesForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="BaseForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Bindings\BaseFormExtensions.cs" />
+    <Compile Include="Bindings\Binding.cs" />
+    <Compile Include="Bindings\BindingBuilder.cs" />
+    <Compile Include="Bindings\BindingSet.cs" />
+    <Compile Include="Bindings\IBindable.cs" />
     <Compile Include="ConesForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -95,6 +103,9 @@
     <Compile Include="SideView.Designer.cs">
       <DependentUpon>SideView.cs</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="ViewModels\ConesViewModel.cs" />
+    <Compile Include="ViewModels\MainViewModel.cs" />
     <EmbeddedResource Include="ActivitiesForm.resx">
       <DependentUpon>ActivitiesForm.cs</DependentUpon>
     </EmbeddedResource>

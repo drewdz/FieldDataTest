@@ -25,7 +25,7 @@ namespace DataFactory.Model
 
         #region Properties
 
-        [JsonProperty]
+        [JsonProperty("chipId")]
         public string TagId { get; set; } = Guid.NewGuid().ToString();
 
         [JsonProperty]
