@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace FieldDataTest
 {
-    public class BaseForm<TViewModel> : Form, IBindable where TViewModel : BaseViewModel, new()
+    public class BaseForm<TViewModel> : Form, IBindable where TViewModel : IViewModel, new()
     {
         #region Delegates
 
@@ -45,7 +45,7 @@ namespace FieldDataTest
         protected override void Dispose(bool disposing)
         {
             ViewModel.PropertyChanged -= PropertyChanged;
-            ViewModel = null;
+            ViewModel = default(TViewModel);
             base.Dispose(disposing);
         }
 

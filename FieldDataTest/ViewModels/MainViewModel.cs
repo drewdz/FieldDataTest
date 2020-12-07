@@ -1,6 +1,6 @@
 ﻿namespace FieldDataTest.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    public class MainViewModel : BaseViewModel, IViewModel
     {
     }
 }

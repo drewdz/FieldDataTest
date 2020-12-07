@@ -67,52 +67,6 @@ namespace FieldDataTest
 
         #region Event Handlers
 
-        private void OnActionItemClicked(object sender, EventArgs e)
-        {
-            if (sender == null) return;
-            var menu = (ToolStripMenuItem)sender;
-            //  get the activity
-            var activity = _Field.Activities.FirstOrDefault(a => a.Type.Equals(menu.Tag));
-            if (activity == null) return;
-            //  get iterations
-            using (var frm = new IterationForm())
-            {
-                frm.Iterations = 1;
-                if (frm.ShowDialog(this) == DialogResult.OK)
-                {
-                    _Data.AddRange(activity.Generator.Generate(DateTime.Now, frm.Iterations));
-                }
-            }
-        }
-
-        private void OnExecuteItemClicked(object sender, EventArgs e)
-        {
-            if (sender == null) return;
-            var menu = (ToolStripMenuItem)sender;
-            //  get the activity
-            var activity = _Field.Activities.FirstOrDefault(a => a.Type.Equals(menu.Tag));
-            if (activity == null) return;
-        }
-
-        private void FieldMenu_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (OpenFile.ShowDialog(this) != DialogResult.OK) return;
-                _Field = Serializer.DeserializeFile<PlayingField>(OpenFile.FileName);
-                //  convert to meters
-                foreach (var activity in _Field.Activities)
-                {
-                    activity.OnDoneAction = async (p) => await DoneAction(p);
-                    activity.Init(0);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Exception: {ex}");
-            }
-        }
-
         private void MainForm_Load(object sender, System.EventArgs e)
         {
             _Background = new Bitmap(GetType(), "field.png");
@@ -352,6 +306,84 @@ namespace FieldDataTest
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (_RunLogger) _RunLogger = false;
+        }
+
+        private void FileOpenMenu_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (OpenFile.ShowDialog(this) != DialogResult.OK) return;
+                //  deserialize
+                if (new FileInfo(OpenFile.FileName).Extension.EndsWith("csv", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var data = Program.ImportData(OpenFile.FileName)?.ToList();
+                    var min = data.Min(d => d.Timestamp);
+                    data.ForEach(d => d.Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds() + (d.Timestamp - min) + 10000);
+                    _Data = data;
+                }
+                else
+                {
+                    using (var fs = new FileStream(OpenFile.FileName, FileMode.Open, FileAccess.Read))
+                    {
+                        using (var sr = new StreamReader(fs))
+                        {
+                            var data = Serializer.Deserialize<List<ZebraData>>(sr.ReadToEnd())?.Select(z => (EventData)z).ToList();
+                            var min = data.Min(d => d.Timestamp);
+                            data.ForEach(d => d.Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds() + (d.Timestamp - min) + 10000);
+                            _Data = data;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message);
+            }
+        }
+
+        private void GetDataMenu_Click(object sender, EventArgs e)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    using (var restService = new RestService())
+                    {
+                        //  get activity
+                        var baseUrl = string.Format(_BaseUrl, "domain/zebradata");
+                        var result = await restService.GetAsync<ServiceResult<List<ZebraData>>>(baseUrl);
+                        if (result.Status != ServiceResultStatus.Success) throw new Exception("Could not get Zebra Data");
+                        var min = result.Payload.Min(d => d.Timestamp);
+                        result.Payload.ForEach(d => d.Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds() + (d.Timestamp - min) + 10000);
+                        _Data = result.Payload.Select(d => (EventData)d)?.ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message);
+                }
+            });
+        }
+
+        private void ClearDataMenu_Click(object sender, EventArgs e)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    using (var restService = new RestService())
+                    {
+                        //  get activity
+                        var baseUrl = string.Format(_BaseUrl, "domain/zebradata/delete/all");
+                        var result = await restService.GetAsync<ServiceResult>(baseUrl);
+                        if (result.Status != ServiceResultStatus.Success) throw new Exception("Could not delete Zebra Data");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message);
+                }
+            });
         }
 
         #endregion Event Handlers
@@ -671,20 +703,6 @@ namespace FieldDataTest
             return (Color)converter.ConvertFromString(hex);
         }
 
-        private void Stats()
-        {
-            if ((_Data == null) || (_Data.Count == 0)) return;
-            var xMin = _Data.Min(d => d.X);
-            var yMin = _Data.Min(d => d.Y);
-            var xMax = _Data.Max(d => d.X);
-            var yMax = _Data.Max(d => d.Y);
-            var vMin = _Data.Min(d => d.V);
-            var vMax = _Data.Max(d => d.V);
-            var rMin = _Data.Min(d => d.R);
-            var rMax = _Data.Max(d => d.R);
-            Status.Text = $"{_Data?.Count}; Bounds ({xMin}, {yMin}), ({xMax}, {yMax}); Velocity ({vMin}, {vMax}); RVelocity ({rMin}, {rMax})";
-        }
-
         private async Task GetActivitiesAsync()
         {
             try
@@ -780,21 +798,6 @@ namespace FieldDataTest
                     restService.EchoOn = true;
                     await restService.PostAsync<PlayerActivity, PlayerActivity>(string.Format($"{_BaseUrl}playeractivity/set", "activity"), player);
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Exception: {ex}");
-            }
-        }
-
-        private void BaseAddressMenu_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                var frm = new InputForm("Base Address", "Enter Base Address", _BaseUrl);
-                if (frm.ShowDialog(this) == DialogResult.Cancel) return;
-                if (_BaseUrl.Equals(frm.Result)) return;
-                _BaseUrl = frm.Result;
             }
             catch (Exception ex)
             {

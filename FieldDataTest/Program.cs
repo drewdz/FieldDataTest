@@ -39,7 +39,7 @@ namespace FieldDataTest
             Application.Run(new MainForm());
         }
 
-        static IEnumerable<EventData> ImportData(string file)
+        public static IEnumerable<EventData> ImportData(string file)
         {
             using (var sr = new StreamReader(file))
             {

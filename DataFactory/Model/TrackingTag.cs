@@ -1,4 +1,4 @@
-﻿using DataMonitor;
+﻿//using DataMonitor;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace DataFactory.Model
         #region Fields
 
         private Timer _Timer;
-        private DataMonitor.Monitor _Monitor;
+        //private DataMonitor.Monitor _Monitor;
 
         #endregion Fields
 
@@ -92,18 +92,18 @@ namespace DataFactory.Model
             Timestamp = data.Timestamp;
         }
 
-        public void StartTimer(DataMonitor.Monitor monitor)
-        {
-            _Monitor = monitor;
-            _Timer = new Timer(Tick, null, 0, 100);
-        }
+        //public void StartTimer(DataMonitor.Monitor monitor)
+        //{
+        //    _Monitor = monitor;
+        //    _Timer = new Timer(Tick, null, 0, 100);
+        //}
 
-        public void StopTimer()
-        {
-            if (_Timer == null) return;
-            _Timer.Dispose();
-            _Timer = null;
-        }
+        //public void StopTimer()
+        //{
+        //    if (_Timer == null) return;
+        //    _Timer.Dispose();
+        //    _Timer = null;
+        //}
 
         public override string ToString()
         {
@@ -120,11 +120,11 @@ namespace DataFactory.Model
 
         #region Timer
 
-        private void Tick(object o)
-        {
-            if (_Monitor == null) return;
-            _Monitor.AddData(ToString());
-        }
+        //private void Tick(object o)
+        //{
+        //    if (_Monitor == null) return;
+        //    _Monitor.AddData(ToString());
+        //}
 
         #endregion Timer
     }

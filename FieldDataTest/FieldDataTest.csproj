@@ -105,7 +105,9 @@
     </Compile>
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\ConesViewModel.cs" />
+    <Compile Include="ViewModels\IViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ZebraData.cs" />
     <EmbeddedResource Include="ActivitiesForm.resx">
       <DependentUpon>ActivitiesForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -159,10 +161,6 @@
     <ProjectReference Include="..\DataFactory\DataFactory.csproj">
       <Project>{d4a4e5b4-2c2d-43be-a006-29d50d3f2d3c}</Project>
       <Name>DataFactory</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DataMonitor\DataMonitor.csproj">
-      <Project>{bf2ea74c-d8e5-41f8-a058-93b7d61b908e}</Project>
-      <Name>DataMonitor</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

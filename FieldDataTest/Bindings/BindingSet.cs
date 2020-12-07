@@ -7,7 +7,7 @@ namespace FieldDataTest.Bindings
 {
     public class BindingSet<TView, TViewModel>
         where TView : BaseForm<TViewModel>
-        where TViewModel : BaseViewModel, new()
+        where TViewModel : IViewModel, new()
     {
         #region Fields
 

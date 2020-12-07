@@ -1,6 +1,6 @@
 ﻿namespace FieldDataTest.ViewModels
 {
-    public class ConesViewModel : BaseViewModel
+    public class ConesViewModel : BaseViewModel, IViewModel
     {
         #region Fields
 
