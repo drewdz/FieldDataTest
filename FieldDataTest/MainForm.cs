@@ -741,6 +741,12 @@ namespace FieldDataTest
             }
         }
 
+        private void SimTunnelRun_Click(object sender, EventArgs e)
+        {
+            var frm = new TunnelView();
+            frm.ShowDialog(this);
+        }
+
         private async Task SendScan(FieldActivity activity)
         {
             if ((activity == null) || (activity.State != ActivityState.Waiting)) return;

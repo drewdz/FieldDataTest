@@ -6,7 +6,7 @@ using System.ComponentModel;
 
 namespace DataFactory.Model
 {
-    public class PlayerActivity
+    public class PlayerActivity : NotifyBase
     {
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public string Id { get; set; }
@@ -37,6 +37,9 @@ namespace DataFactory.Model
 
         [JsonProperty("processed")]
         public int Processed { get; set; } = 0;
+
+        [JsonProperty("payload")]
+        public List<PlayerActivityData> PlayerActivityData { get; set; }
     }
 
     public class DateTimeConverter : IsoDateTimeConverter

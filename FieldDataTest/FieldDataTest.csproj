@@ -69,6 +69,7 @@
     <Compile Include="Bindings\BindingBuilder.cs" />
     <Compile Include="Bindings\BindingSet.cs" />
     <Compile Include="Bindings\IBindable.cs" />
+    <Compile Include="Commands\BasicCommand.cs" />
     <Compile Include="ConesForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -103,10 +104,17 @@
     <Compile Include="SideView.Designer.cs">
       <DependentUpon>SideView.cs</DependentUpon>
     </Compile>
+    <Compile Include="TunnelView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TunnelView.Designer.cs">
+      <DependentUpon>TunnelView.cs</DependentUpon>
+    </Compile>
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\ConesViewModel.cs" />
     <Compile Include="ViewModels\IViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\TunnelViewModel.cs" />
     <Compile Include="ZebraData.cs" />
     <EmbeddedResource Include="ActivitiesForm.resx">
       <DependentUpon>ActivitiesForm.cs</DependentUpon>
@@ -137,6 +145,9 @@
     <EmbeddedResource Include="SideView.resx">
       <DependentUpon>SideView.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="TunnelView.resx">
+      <DependentUpon>TunnelView.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -162,6 +173,13 @@
       <Project>{d4a4e5b4-2c2d-43be-a006-29d50d3f2d3c}</Project>
       <Name>DataFactory</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="image1.jpeg" />
+    <EmbeddedResource Include="image2.jpeg" />
+    <EmbeddedResource Include="image3.jpeg" />
+    <EmbeddedResource Include="image4.jpeg" />
+    <EmbeddedResource Include="image5.jpeg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

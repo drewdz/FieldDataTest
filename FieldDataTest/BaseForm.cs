@@ -1,6 +1,7 @@
 ﻿using FieldDataTest.Bindings;
 using FieldDataTest.ViewModels;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Windows.Forms;
 
 namespace FieldDataTest
@@ -11,6 +12,7 @@ namespace FieldDataTest
 
         protected delegate void CrossDelegateMethod(string s);
         protected delegate void CrossDelegateMethod<T, U>(T target, U value);
+        protected delegate void CrossDelegatePropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e);
 
         #endregion Delegates
 
@@ -60,18 +62,25 @@ namespace FieldDataTest
 
         public void PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            //  find the binding
-            if (!Bindings.ContainsKey(e.PropertyName)) return;
-            var binding = Bindings[e.PropertyName];
-            //  find the view property
-            var viewProperty = binding.Target.GetType().GetProperty(binding.ViewProperty);
-            var vPropertyValue = viewProperty.GetValue(binding.Target);
-            //  get the view model property
-            var viewModelProperty = ViewModel.GetType().GetProperty(binding.ViewModelProperty);
-            var vmPropertyValue = viewModelProperty.GetValue(ViewModel);
-            //  avoid endless loops
-            if (vPropertyValue == vmPropertyValue) return;
-            viewProperty.SetValue(binding.Target, vmPropertyValue);
+            if (InvokeRequired)
+            {
+                Invoke(new CrossDelegatePropertyChanged(PropertyChanged), new object[] { sender, e });
+            }
+            else
+            {
+                //  find the binding
+                if (!Bindings.ContainsKey(e.PropertyName)) return;
+                var binding = Bindings[e.PropertyName];
+                //  find the view property
+                var viewProperty = binding.Target.GetType().GetProperty(binding.ViewProperty);
+                var vPropertyValue = viewProperty.GetValue(binding.Target);
+                //  get the view model property
+                var viewModelProperty = ViewModel.GetType().GetProperty(binding.ViewModelProperty);
+                var vmPropertyValue = viewModelProperty.GetValue(ViewModel);
+                //  avoid endless loops
+                if (vPropertyValue == vmPropertyValue) return;
+                viewProperty.SetValue(binding.Target, vmPropertyValue);
+            }
         }
 
         #endregion Event Handlers

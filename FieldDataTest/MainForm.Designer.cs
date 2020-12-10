@@ -36,19 +36,22 @@
             this.MainMenu = new System.Windows.Forms.MenuStrip();
             this.FileMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.FileOpenMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.GetDataMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ClearDataMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ActionMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.StartMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
             this.RunMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.PauseMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
-            this.ExitMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.SimTunnelRun = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.SetupMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.OpenFile = new System.Windows.Forms.OpenFileDialog();
             this.SaveFile = new System.Windows.Forms.SaveFileDialog();
-            this.ClearDataMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+            this.ExitMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             ((System.ComponentModel.ISupportInitialize)(this.MainImage)).BeginInit();
             this.MainStatus.SuspendLayout();
             this.MainMenu.SuspendLayout();
@@ -119,7 +122,9 @@
             this.FileOpenMenu,
             this.toolStripMenuItem2,
             this.GetDataMenu,
-            this.ClearDataMenu});
+            this.ClearDataMenu,
+            this.toolStripSeparator2,
+            this.ExitMenu});
             this.FileMenu.Name = "FileMenu";
             this.FileMenu.Size = new System.Drawing.Size(37, 20);
             this.FileMenu.Text = "File";
@@ -131,12 +136,24 @@
             this.FileOpenMenu.Text = "Load Data";
             this.FileOpenMenu.Click += new System.EventHandler(this.FileOpenMenu_Click);
             // 
+            // toolStripMenuItem2
+            // 
+            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(177, 6);
+            // 
             // GetDataMenu
             // 
             this.GetDataMenu.Name = "GetDataMenu";
             this.GetDataMenu.Size = new System.Drawing.Size(180, 22);
             this.GetDataMenu.Text = "Get Data";
             this.GetDataMenu.Click += new System.EventHandler(this.GetDataMenu_Click);
+            // 
+            // ClearDataMenu
+            // 
+            this.ClearDataMenu.Name = "ClearDataMenu";
+            this.ClearDataMenu.Size = new System.Drawing.Size(180, 22);
+            this.ClearDataMenu.Text = "Clear Data";
+            this.ClearDataMenu.Click += new System.EventHandler(this.ClearDataMenu_Click);
             // 
             // ActionMenu
             // 
@@ -146,7 +163,8 @@
             this.RunMenu,
             this.PauseMenu,
             this.toolStripMenuItem1,
-            this.ExitMenu});
+            this.SimTunnelRun,
+            this.toolStripSeparator1});
             this.ActionMenu.Name = "ActionMenu";
             this.ActionMenu.Size = new System.Drawing.Size(59, 20);
             this.ActionMenu.Text = "Actions";
@@ -154,19 +172,19 @@
             // StartMenu
             // 
             this.StartMenu.Name = "StartMenu";
-            this.StartMenu.Size = new System.Drawing.Size(163, 22);
+            this.StartMenu.Size = new System.Drawing.Size(183, 22);
             this.StartMenu.Text = "Start Stream";
             this.StartMenu.Click += new System.EventHandler(this.StartMenu_Click);
             // 
             // toolStripMenuItem5
             // 
             this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(160, 6);
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(180, 6);
             // 
             // RunMenu
             // 
             this.RunMenu.Name = "RunMenu";
-            this.RunMenu.Size = new System.Drawing.Size(163, 22);
+            this.RunMenu.Size = new System.Drawing.Size(183, 22);
             this.RunMenu.Text = "Start";
             this.RunMenu.Visible = false;
             this.RunMenu.Click += new System.EventHandler(this.RunMenu_Click);
@@ -174,22 +192,26 @@
             // PauseMenu
             // 
             this.PauseMenu.Name = "PauseMenu";
-            this.PauseMenu.Size = new System.Drawing.Size(163, 22);
+            this.PauseMenu.Size = new System.Drawing.Size(183, 22);
             this.PauseMenu.Text = "Use Scanner App";
             this.PauseMenu.Click += new System.EventHandler(this.PauseMenu_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(160, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(180, 6);
             // 
-            // ExitMenu
+            // SimTunnelRun
             // 
-            this.ExitMenu.Name = "ExitMenu";
-            this.ExitMenu.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.ExitMenu.Size = new System.Drawing.Size(163, 22);
-            this.ExitMenu.Text = "Exit";
-            this.ExitMenu.Click += new System.EventHandler(this.ExitMenu_Click);
+            this.SimTunnelRun.Name = "SimTunnelRun";
+            this.SimTunnelRun.Size = new System.Drawing.Size(183, 22);
+            this.SimTunnelRun.Text = "Simulate Tunnel Run";
+            this.SimTunnelRun.Click += new System.EventHandler(this.SimTunnelRun_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(180, 6);
             // 
             // SetupMenu
             // 
@@ -197,17 +219,18 @@
             this.SetupMenu.Size = new System.Drawing.Size(92, 20);
             this.SetupMenu.Text = "Activity Setup";
             // 
-            // ClearDataMenu
+            // ExitMenu
             // 
-            this.ClearDataMenu.Name = "ClearDataMenu";
-            this.ClearDataMenu.Size = new System.Drawing.Size(180, 22);
-            this.ClearDataMenu.Text = "Clear Data";
-            this.ClearDataMenu.Click += new System.EventHandler(this.ClearDataMenu_Click);
+            this.ExitMenu.Name = "ExitMenu";
+            this.ExitMenu.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
+            this.ExitMenu.Size = new System.Drawing.Size(180, 22);
+            this.ExitMenu.Text = "Exit";
+            this.ExitMenu.Click += new System.EventHandler(this.ExitMenu_Click);
             // 
-            // toolStripMenuItem2
+            // toolStripSeparator2
             // 
-            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
             // 
             // MainForm
             // 
@@ -249,12 +272,15 @@
         private System.Windows.Forms.ToolStripMenuItem RunMenu;
         private System.Windows.Forms.ToolStripMenuItem PauseMenu;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem ExitMenu;
         private System.Windows.Forms.ToolStripMenuItem SetupMenu;
         private System.Windows.Forms.ToolStripMenuItem FileMenu;
         private System.Windows.Forms.ToolStripMenuItem FileOpenMenu;
         private System.Windows.Forms.ToolStripMenuItem GetDataMenu;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
         private System.Windows.Forms.ToolStripMenuItem ClearDataMenu;
+        private System.Windows.Forms.ToolStripMenuItem SimTunnelRun;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripMenuItem ExitMenu;
     }
 }
